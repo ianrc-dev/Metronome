@@ -17,6 +17,8 @@
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
+        - name: Bump service worker cache version
+          run: sed -i "s/cgm-v[^'\".]*/cgm-$(date +%Y%m%d%H%M%S)/g" sw.js
         - uses: actions/configure-pages@v4
         - uses: actions/upload-pages-artifact@v3
           with:
