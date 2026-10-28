@@ -16,14 +16,16 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// Activate: delete any old caches from previous versions
+// Activate: delete old caches, claim all tabs, then reload them so they
+// immediately get the latest HTML rather than waiting for the next navigation.
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: 'window' }))
+      .then(clients => clients.forEach(c => c.navigate(c.url)))
   );
-  self.clients.claim();
 });
 
 // Fetch: network-first for HTML (always get latest), cache-first for everything else
