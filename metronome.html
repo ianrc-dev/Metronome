@@ -529,25 +529,22 @@
     <div class="timing-inline-head">
       <span class="ctrl-label">Timing Analysis</span>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-sm" id="timingSettingsBtn">⚙ Setup</button>
         <button class="btn btn-sm" id="timingInlineBtn">Enable</button>
         <button class="btn btn-sm" id="timingInlineReset">Reset</button>
       </div>
     </div>
-    <div id="timingSettingsPanel" style="display:none">
-      <div class="timing-settings">
-        <div class="field">
-          <label>Hit window (±ms)</label>
-          <input type="number" id="timingWindowInput" value="30" min="5" max="200" step="5">
-        </div>
-        <div class="field">
-          <label>Onset sensitivity</label>
-          <select id="timingSensitivity">
-            <option value="3">High — soft playing</option>
-            <option value="4.5" selected>Medium</option>
-            <option value="7">Low — loud playing</option>
-          </select>
-        </div>
+    <div class="timing-settings">
+      <div class="field">
+        <label>Hit window (±ms)</label>
+        <input type="number" id="timingWindowInput" value="30" min="5" max="200" step="5">
+      </div>
+      <div class="field">
+        <label>Onset sensitivity</label>
+        <select id="timingSensitivity">
+          <option value="3">High — soft playing</option>
+          <option value="4.5" selected>Medium</option>
+          <option value="7">Low — loud playing</option>
+        </select>
       </div>
     </div>
     <div id="timingInlineBody" style="display:none">
@@ -1909,14 +1906,6 @@ document.getElementById('timingMicBtn').addEventListener('click',    () => { tim
 document.getElementById('timingResetBtn').addEventListener('click',   resetTiming);
 document.getElementById('timingInlineBtn').addEventListener('click',  () => { timingMicOn ? stopTimingMic() : startTimingMic(); });
 document.getElementById('timingInlineReset').addEventListener('click', resetTiming);
-
-// Settings panel toggle
-document.getElementById('timingSettingsBtn').addEventListener('click', () => {
-  const panel = document.getElementById('timingSettingsPanel');
-  const open  = panel.style.display === 'none';
-  panel.style.display = open ? '' : 'none';
-  document.getElementById('timingSettingsBtn').textContent = open ? '⚙ Setup ▴' : '⚙ Setup';
-});
 
 // Helper: sync both controls and update sublabel
 function applyTimingSettings(win, ratio) {
