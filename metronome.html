@@ -1032,8 +1032,31 @@ function onBarBoundary() {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Screen Wake Lock — keep display on while metronome is running
+// ─────────────────────────────────────────────────────────────────────────────
+let wakeLock = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (_) { /* denied or not supported */ }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+// Re-acquire lock if the page comes back into view while playing
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && playing) requestWakeLock();
+});
+
 function startPlaying() {
   ensureAudio();
+  requestWakeLock();
   playing     = true;
   curBeat     = 0;
   curBar      = 0;
@@ -1056,6 +1079,7 @@ function startPlaying() {
 
 function stopPlaying() {
   playing = false;
+  releaseWakeLock();
   clearInterval(schedTimer);
   curBeat = 0; curBar = 0;
   document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('active', 'is-active-accent'));
