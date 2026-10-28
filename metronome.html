@@ -396,6 +396,16 @@
     .timing-inline-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .timing-inline-score { font-size: 56px; font-weight: bold; text-align: center; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; padding: 6px 0 2px; }
     .timing-inline-sublabel { font-size: 12px; color: var(--text-dim); text-align: center; margin-bottom: 6px; }
+    .timing-settings {
+      background: var(--surface2); border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 10px 14px; margin-top: 8px;
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
+    }
+    .timing-settings .field { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+    .timing-settings label { font-size: 12px; color: var(--text-dim); }
+    .timing-settings input[type="number"] { font-size: 16px; padding: 6px 8px; width: 100%; }
+    .timing-settings select { font-size: 14px; padding: 6px 8px; }
 
     /* ── Drone panel ───────────────────────────────────────── */
     .drone-note-grid { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; padding: 8px 0; max-width: 420px; margin: 0 auto; }
@@ -519,13 +529,30 @@
     <div class="timing-inline-head">
       <span class="ctrl-label">Timing Analysis</span>
       <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" id="timingSettingsBtn">⚙ Setup</button>
         <button class="btn btn-sm" id="timingInlineBtn">Enable</button>
         <button class="btn btn-sm" id="timingInlineReset">Reset</button>
       </div>
     </div>
+    <div id="timingSettingsPanel" style="display:none">
+      <div class="timing-settings">
+        <div class="field">
+          <label>Hit window (±ms)</label>
+          <input type="number" id="timingWindowInput" value="30" min="5" max="200" step="5">
+        </div>
+        <div class="field">
+          <label>Onset sensitivity</label>
+          <select id="timingSensitivity">
+            <option value="3">High — soft playing</option>
+            <option value="4.5" selected>Medium</option>
+            <option value="7">Low — loud playing</option>
+          </select>
+        </div>
+      </div>
+    </div>
     <div id="timingInlineBody" style="display:none">
       <div class="timing-inline-score" id="timingInlineScore">—</div>
-      <div class="timing-inline-sublabel">accuracy within ±30 ms</div>
+      <div class="timing-inline-sublabel" id="timingInlineSublabel">accuracy within ±30 ms</div>
       <div class="timing-track" id="timingTrackInline">
         <div class="timing-center-line"></div>
         <div class="timing-window"></div>
@@ -678,6 +705,20 @@
   <div class="timing-controls">
     <button class="btn btn-md" id="timingMicBtn">Enable Mic</button>
     <button class="btn btn-sm" id="timingResetBtn">Reset</button>
+  </div>
+  <div class="timing-settings" style="max-width:420px">
+    <div class="field">
+      <label>Hit window (±ms)</label>
+      <input type="number" id="timingWindowInput2" value="30" min="5" max="200" step="5">
+    </div>
+    <div class="field">
+      <label>Onset sensitivity</label>
+      <select id="timingSensitivity2">
+        <option value="3">High — soft playing</option>
+        <option value="4.5" selected>Medium</option>
+        <option value="7">Low — loud playing</option>
+      </select>
+    </div>
   </div>
   <div class="timing-score" id="timingScore">—</div>
   <div class="timing-score-label">accuracy within ±30 ms</div>
@@ -1755,9 +1796,10 @@ let timingSrc = null, timingAnalyser = null;
 let tHits = 0, tInTime = 0, tErrors = [];   // |error| in ms
 let tEnergySmooth = 0;
 let tLastOnset = -999;
-const T_COOLDOWN = 180;   // ms between accepted onsets
-const T_WINDOW   = 30;    // ms for "in time"
-const T_MAX_MS   = 150;   // display range ±150 ms
+const T_COOLDOWN  = 180;   // ms between accepted onsets
+const T_MAX_MS    = 150;   // display range ±150 ms
+let   tWindow     = 30;    // ms — configurable hit window
+let   onsetRatio  = 4.5;   // configurable onset sensitivity multiplier
 
 async function startTimingMic() {
   ensureAudio();
@@ -1810,7 +1852,7 @@ function runTimingLoop() {
   const nowMs = actx.currentTime * 1000;
 
   if (playing
-      && energy > tEnergySmooth * 4.5
+      && energy > tEnergySmooth * onsetRatio
       && energy > 0.0003
       && nowMs - tLastOnset > T_COOLDOWN) {
     tLastOnset = nowMs;
@@ -1833,7 +1875,7 @@ function recordTimingHit(onsetAC) {
 
   const errMs = bestErr * 1000;
   tHits++;
-  if (Math.abs(errMs) <= T_WINDOW) tInTime++;
+  if (Math.abs(errMs) <= tWindow) tInTime++;
   tErrors.push(Math.abs(errMs));
 
   const pct = Math.round((tInTime / tHits) * 100);
@@ -1847,7 +1889,7 @@ function recordTimingHit(onsetAC) {
 
   // Add blip to both tracks
   const leftPct  = Math.max(2, Math.min(98, 50 + (errMs / T_MAX_MS) * 47));
-  const blipColor = Math.abs(errMs) <= T_WINDOW ? '#4caf50' : 'var(--downbeat)';
+  const blipColor = Math.abs(errMs) <= tWindow ? '#4caf50' : 'var(--downbeat)';
 
   function addBlip(trackId) {
     const track = document.getElementById(trackId);
@@ -1867,6 +1909,45 @@ document.getElementById('timingMicBtn').addEventListener('click',    () => { tim
 document.getElementById('timingResetBtn').addEventListener('click',   resetTiming);
 document.getElementById('timingInlineBtn').addEventListener('click',  () => { timingMicOn ? stopTimingMic() : startTimingMic(); });
 document.getElementById('timingInlineReset').addEventListener('click', resetTiming);
+
+// Settings panel toggle
+document.getElementById('timingSettingsBtn').addEventListener('click', () => {
+  const panel = document.getElementById('timingSettingsPanel');
+  const open  = panel.style.display === 'none';
+  panel.style.display = open ? '' : 'none';
+  document.getElementById('timingSettingsBtn').textContent = open ? '⚙ Setup ▴' : '⚙ Setup';
+});
+
+// Helper: sync both controls and update sublabel
+function applyTimingSettings(win, ratio) {
+  tWindow     = Math.max(5, Math.min(200, win));
+  onsetRatio  = ratio;
+  const label = `accuracy within ±${tWindow} ms`;
+  document.getElementById('timingInlineSublabel').textContent = label;
+  document.querySelector('#panel-timing .timing-score-label').textContent = label;
+}
+
+// Hit window inputs (keep both in sync)
+document.getElementById('timingWindowInput').addEventListener('input', e => {
+  const v = parseInt(e.target.value, 10) || 30;
+  document.getElementById('timingWindowInput2').value = v;
+  applyTimingSettings(v, onsetRatio);
+});
+document.getElementById('timingWindowInput2').addEventListener('input', e => {
+  const v = parseInt(e.target.value, 10) || 30;
+  document.getElementById('timingWindowInput').value = v;
+  applyTimingSettings(v, onsetRatio);
+});
+
+// Sensitivity selects (keep both in sync)
+document.getElementById('timingSensitivity').addEventListener('change', e => {
+  document.getElementById('timingSensitivity2').value = e.target.value;
+  applyTimingSettings(tWindow, parseFloat(e.target.value));
+});
+document.getElementById('timingSensitivity2').addEventListener('change', e => {
+  document.getElementById('timingSensitivity').value = e.target.value;
+  applyTimingSettings(tWindow, parseFloat(e.target.value));
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  DRONE
