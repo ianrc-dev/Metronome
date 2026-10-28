@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#181818">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Metronome">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Classical Guitar Metronome</title>
+  <style>
+    :root {
+      --bg:           #181818;
+      --surface:      #222222;
+      --surface2:     #2c2c2c;
+      --border:       #3a3a3a;
+      --accent:       #d4911a;
+      --accent-glow:  rgba(212,145,26,.35);
+      --downbeat:     #e04428;
+      --downbeat-glow:rgba(224,68,40,.4);
+      --text:         #e6e2d8;
+      --text-dim:     #7a7670;
+      --radius:       7px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 18px;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Tabs ──────────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
+      padding: 0 12px;
+      flex-shrink: 0;
+    }
+    .tab {
+      padding: 11px 20px;
+      cursor: pointer;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      background: none;
+      color: var(--text-dim);
+      font-size: 15px;
+      font-family: inherit;
+      transition: color .15s;
+    }
+    .tab:hover  { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── Panels ────────────────────────────────────────────── */
+    .panel { display: none; flex: 1; overflow-y: auto; padding: 18px 20px; }
+    .panel.active { display: flex; flex-direction: column; }
+
+    /* ── Beat dots ─────────────────────────────────────────── */
+    #beatDisplay {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 0 16px;
+      min-height: 72px;
+    }
+    .beat-group { display: flex; gap: 10px; }
+    .beat-group + .beat-group { margin-left: 18px; }
+
+    .beat-dot {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: #252525;
+      border: 2px solid #383838;
+      cursor: pointer;
+      transition: background .25s ease-out, box-shadow .25s ease-out, border-color .15s;
+    }
+    .beat-dot:hover            { border-color: #555; }
+    .beat-dot.is-accent        { border-color: var(--downbeat); }
+    .beat-dot.is-soft          { opacity: .5; }
+    .beat-dot.is-silent        { opacity: .2; border-style: dashed; }
+    .beat-dot.active           { background: var(--accent);   box-shadow: 0 0 10px var(--accent-glow);   transition: background 0s, box-shadow 0s; }
+    .beat-dot.active.is-accent { background: var(--downbeat); box-shadow: 0 0 12px var(--downbeat-glow); }
+
+    /* ── BPM area ──────────────────────────────────────────── */
+    .tempo-section { text-align: center; padding: 4px 0 8px; }
+    .bpm-row {
+      display: flex; align-items: center; justify-content: center; gap: 14px;
+    }
+    .bpm-display {
+      font-size: 76px; font-weight: bold; min-width: 170px;
+      letter-spacing: -2px; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .tempo-btn-col { display: flex; flex-direction: column; gap: 6px; }
+
+    .btn {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .1s;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .btn:hover  { background: #363636; }
+    .btn:active { background: #404040; }
+
+    .btn-t    { width: 50px; height: 34px; font-size: 17px; }
+    .btn-tap  { font-size: 20px; padding: 9px 24px; letter-spacing: .05em; }
+
+    .tempo-marking {
+      font-size: 19px; color: var(--text-dim);
+      font-style: italic; margin-top: 6px; height: 22px;
+    }
+
+    /* ── Control row ───────────────────────────────────────── */
+    .ctrl-row {
+      display: flex; flex-wrap: wrap;
+      justify-content: center; gap: 14px;
+      padding: 10px 0;
+    }
+    .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+    .ctrl-label {
+      font-size: 11px; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+    select {
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 7px 10px; font-size: 15px; font-family: inherit; cursor: pointer;
+    }
+
+    /* ── Accent buttons ────────────────────────────────────── */
+    #accentRow {
+      display: flex; flex-wrap: wrap;
+      justify-content: center; gap: 6px; padding: 6px 0;
+    }
+    .acc-btn {
+      width: 40px; height: 36px; font-size: 15px;
+      border-radius: var(--radius);
+    }
+    .acc-btn.is-accent  { border-color: var(--downbeat); color: var(--downbeat); }
+    .acc-btn.is-soft    { opacity: .55; }
+    .acc-btn.is-silent  { opacity: .3; border-style: dashed; }
+
+    /* ── Start button ──────────────────────────────────────── */
+    .start-row {
+      display: flex; justify-content: center; align-items: center;
+      gap: 16px; padding: 14px 0 8px;
+    }
+    .btn-start {
+      font-size: 24px; padding: 14px 56px;
+      border-radius: 40px; border-width: 2px; letter-spacing: .06em;
+    }
+    .btn-start.playing { border-color: var(--accent); color: var(--accent); }
+
+    #countInMsg {
+      font-size: 14px; color: var(--text-dim);
+      text-align: center; min-height: 20px; padding-bottom: 4px;
+    }
+
+    /* ── Visual extras ─────────────────────────────────────── */
+    .extras-row {
+      display: flex; flex-wrap: wrap;
+      justify-content: center; gap: 18px;
+      padding: 6px 0; font-size: 13px; color: var(--text-dim);
+    }
+    .extras-row label {
+      display: flex; align-items: center; gap: 6px; cursor: pointer;
+    }
+    input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+    }
+    input[type="range"] { accent-color: var(--accent); }
+
+    #pendulumWrap { display: flex; justify-content: center; padding: 6px 0; }
+    #pendulumCanvas { display: none; }
+    #pendulumCanvas.visible { display: block; }
+
+    /* ── Flash overlay ─────────────────────────────────────── */
+    #flashOverlay {
+      position: fixed; inset: 0;
+      background: var(--accent); opacity: 0;
+      pointer-events: none; z-index: 200;
+      transition: opacity .05s;
+    }
+    #flashOverlay.on { opacity: .18; transition: opacity 0s; }
+
+    /* ── Trainer / Gap panels ──────────────────────────────── */
+    .section-head {
+      font-size: 16px; color: var(--text-dim); font-weight: normal;
+      border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 14px;
+    }
+    .form-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 14px; max-width: 520px;
+    }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 13px; color: var(--text-dim); }
+    input[type="number"], input[type="text"] {
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 7px 10px; font-size: 18px; font-family: inherit; width: 100%;
+    }
+    .check-row {
+      display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+      padding: 10px 0; font-size: 14px;
+    }
+    .check-row label { display: flex; align-items: center; gap: 7px; cursor: pointer; color: var(--text); }
+    .btn-row  { display: flex; gap: 10px; padding: 6px 0; }
+    .btn-md   { padding: 9px 20px; font-size: 15px; }
+    .status-box {
+      background: var(--surface2); border-radius: var(--radius);
+      padding: 9px 14px; font-size: 13px; color: var(--text-dim);
+      text-align: center; margin-top: 10px; max-width: 520px;
+    }
+
+    /* ── Presets panel ─────────────────────────────────────── */
+    .preset-add { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .preset-add input { flex: 1; min-width: 180px; font-size: 15px; }
+    .preset-list { display: flex; flex-direction: column; gap: 7px; max-width: 720px; }
+    .preset-item {
+      background: var(--surface2); border: 1px solid transparent;
+      border-radius: var(--radius); padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+      transition: border-color .15s;
+    }
+    .preset-item:hover { border-color: var(--border); }
+    .p-num  { font-size: 13px; color: var(--text-dim); min-width: 18px; text-align: center; }
+    .p-name { font-size: 16px; }
+    .p-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .btn-sm { padding: 5px 11px; font-size: 13px; }
+    .btn-danger { border-color: #803030; color: #cc5050; }
+    .btn-danger:hover { background: #331515; }
+    .io-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+    /* ── Footer ────────────────────────────────────────────── */
+    .footer {
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 9px 18px; display: flex; align-items: center; gap: 14px;
+      flex-shrink: 0;
+      padding-bottom: max(9px, env(safe-area-inset-bottom));
+      padding-left: max(18px, env(safe-area-inset-left));
+      padding-right: max(18px, env(safe-area-inset-right));
+    }
+    .footer-label { font-size: 13px; color: var(--text-dim); white-space: nowrap; }
+    #footerPreset { flex: 1; max-width: 340px; font-size: 13px; }
+    .timer { font-size: 19px; color: var(--accent); font-variant-numeric: tabular-nums; margin-left: auto; }
+
+    /* ── Mobile (phone) ────────────────────────────────────── */
+    @media (max-width: 520px) {
+      /* Safe area on notched phones */
+      .tabs {
+        padding-left:  max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+      }
+      .panel {
+        padding-left:  max(14px, env(safe-area-inset-left));
+        padding-right: max(14px, env(safe-area-inset-right));
+      }
+
+      /* BPM area: put TAP on its own row */
+      .bpm-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto auto;
+        gap: 10px;
+        align-items: center;
+      }
+      .tempo-btn-col:first-child { grid-row: 1; grid-column: 1; }
+      .bpm-display {
+        grid-row: 1; grid-column: 2;
+        font-size: 62px; min-width: unset; text-align: center;
+      }
+      .tempo-btn-col:nth-child(3) { grid-row: 1; grid-column: 3; }
+      #tapBtn {
+        grid-row: 2; grid-column: 1 / -1;
+        width: 100%; font-size: 22px; padding: 12px 0;
+      }
+
+      /* Larger dots for touch */
+      .beat-dot { width: 32px; height: 32px; }
+
+      /* Taller accent buttons */
+      .acc-btn { width: 44px; height: 42px; font-size: 16px; }
+
+      /* Bigger tempo buttons */
+      .btn-t { width: 54px; height: 40px; font-size: 18px; }
+
+      /* Start button full-width feel */
+      .btn-start { font-size: 22px; padding: 16px 40px; }
+
+      /* Selects: prevent iOS text zoom */
+      select { font-size: 16px; }
+
+      /* Forms */
+      .form-grid { grid-template-columns: 1fr; }
+      input[type="number"], input[type="text"] { font-size: 20px; padding: 10px 12px; }
+
+      /* Trainer / Gap btn row */
+      .btn-md { font-size: 16px; padding: 11px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="flashOverlay"></div>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="metronome">Metronome</button>
+  <button class="tab" data-tab="trainer">Trainer</button>
+  <button class="tab" data-tab="gap">Gap Click</button>
+  <button class="tab" data-tab="presets">Presets</button>
+</nav>
+
+<!-- ═══════════════════════════════ METRONOME ═══════════════════════════════ -->
+<div class="panel active" id="panel-metronome">
+
+  <div id="beatDisplay"></div>
+
+  <div class="tempo-section">
+    <div class="bpm-row">
+      <div class="tempo-btn-col">
+        <button class="btn btn-t" id="btnM5">−5</button>
+        <button class="btn btn-t" id="btnM1">−</button>
+      </div>
+      <div class="bpm-display" id="bpmDisplay">88</div>
+      <div class="tempo-btn-col">
+        <button class="btn btn-t" id="btnP1">+</button>
+        <button class="btn btn-t" id="btnP5">+5</button>
+      </div>
+      <button class="btn btn-tap" id="tapBtn">TAP</button>
+    </div>
+    <div class="tempo-marking" id="tempoMarking">Moderato</div>
+  </div>
+
+  <div class="ctrl-row">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Meter</span>
+      <select id="meterSel">
+        <option value="4/4">4/4</option>
+        <option value="3/4">3/4</option>
+        <option value="2/4">2/4</option>
+        <option value="6/8">6/8</option>
+        <option value="9/8">9/8</option>
+        <option value="12/8">12/8</option>
+        <option value="3/8">3/8</option>
+        <option value="5/4">5/4</option>
+        <option value="7/8">7/8</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Subdivide</span>
+      <select id="subdivSel">
+        <option value="none">None</option>
+        <option value="8th">Eighths</option>
+        <option value="triplet">Triplets</option>
+        <option value="16th">Sixteenths</option>
+        <option value="5th">Quintuplets</option>
+        <option value="6th">Sextuplets</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Sound</span>
+      <select id="soundSel">
+        <option value="woodblock">Woodblock</option>
+        <option value="click">Soft Click</option>
+        <option value="beep">Beep</option>
+        <option value="rimshot">Rimshot</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Count-in</span>
+      <select id="countInSel">
+        <option value="0">None</option>
+        <option value="1">1 bar</option>
+        <option value="2">2 bars</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="accentRow"></div>
+
+  <div class="start-row">
+    <button class="btn btn-start" id="startBtn">▶  START</button>
+  </div>
+  <div id="countInMsg"></div>
+
+  <div id="pendulumWrap">
+    <canvas id="pendulumCanvas" width="200" height="110"></canvas>
+  </div>
+
+  <div class="extras-row">
+    <label><input type="checkbox" id="chkFlash"> Full-screen flash</label>
+    <label><input type="checkbox" id="chkPendulum"> Pendulum</label>
+    <label>
+      A/V offset&nbsp;
+      <input type="range" id="avSlider" min="-100" max="300" value="0" style="width:80px">
+      <span id="avVal">0 ms</span>
+    </label>
+    <label>
+      Subdiv vol&nbsp;
+      <input type="range" id="subdivVol" min="0" max="100" value="50" style="width:70px">
+    </label>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TRAINER ═════════════════════════════════ -->
+<div class="panel" id="panel-trainer">
+  <h3 class="section-head">Speed Trainer</h3>
+  <div class="form-grid">
+    <div class="field"><label>Start BPM</label>
+      <input type="number" id="trStart" value="60" min="20" max="300"></div>
+    <div class="field"><label>Target BPM</label>
+      <input type="number" id="trTarget" value="120" min="20" max="300"></div>
+    <div class="field"><label>Step size (BPM)</label>
+      <input type="number" id="trStep" value="4" min="1" max="40"></div>
+    <div class="field"><label>Bars per step</label>
+      <input type="number" id="trBars" value="8" min="1" max="128"></div>
+  </div>
+  <div class="check-row">
+    <label><input type="checkbox" id="trStepBack">
+      Step-back mode (+step, then −½step, repeat)</label>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-md" id="btnTrainerApply">Apply &amp; use metronome</button>
+    <button class="btn btn-md" id="btnTrainerReset">Reset</button>
+  </div>
+  <div class="status-box" id="trainerStatus">Inactive</div>
+</div>
+
+<!-- ═══════════════════════════════ GAP CLICK ════════════════════════════════ -->
+<div class="panel" id="panel-gap">
+  <h3 class="section-head">Gap Click</h3>
+  <div class="form-grid">
+    <div class="field"><label>Play for (bars)</label>
+      <input type="number" id="gapPlay" value="4" min="1" max="128"></div>
+    <div class="field"><label>Silent for (bars)</label>
+      <input type="number" id="gapSilent" value="4" min="1" max="128"></div>
+  </div>
+  <div class="check-row">
+    <label><input type="checkbox" id="gapRandom">
+      Random-mute mode (unpredictable silences)</label>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-md" id="btnGapApply">Apply &amp; use metronome</button>
+    <button class="btn btn-md" id="btnGapReset">Reset</button>
+  </div>
+  <div class="status-box" id="gapStatus">Inactive</div>
+</div>
+
+<!-- ═══════════════════════════════ PRESETS ══════════════════════════════════ -->
+<div class="panel" id="panel-presets">
+  <h3 class="section-head">Presets &amp; Repertoire</h3>
+  <div class="preset-add">
+    <input type="text" id="presetNameInput" placeholder="e.g. Tárrega – Lágrima, B section, 66">
+    <button class="btn btn-md" id="btnSavePreset">Save current settings</button>
+  </div>
+  <div class="preset-list" id="presetList"></div>
+  <div class="io-row">
+    <button class="btn btn-sm" id="btnExport">Export JSON</button>
+    <button class="btn btn-sm" id="btnImport">Import JSON</button>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ FOOTER ══════════════════════════════════ -->
+<div class="footer">
+  <span class="footer-label">Preset:</span>
+  <select id="footerPreset">
+    <option value="">— none —</option>
+  </select>
+  <div class="timer" id="timerDisplay">⏱ 0:00</div>
+</div>
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Time signature table
+//  beatsPerBar  : number of dots shown / beats scheduled
+//  groups       : visual groupings (must sum to beatsPerBar)
+//  beatMult     : beatInterval = (60/BPM) * beatMult
+//                 1   → beat = quarter note  (simple meters)
+//                 1/3 → beat = eighth note in compound (BPM = dotted quarter)
+//                 0.5 → beat = eighth note in 7/8 (BPM = quarter note)
+//  accentBeats  : beat indices that default to 'accent'
+// ─────────────────────────────────────────────────────────────────────────────
+const TIME_SIGS = {
+  '4/4':  { beatsPerBar: 4,  groups: [4],       beatMult: 1,     accentBeats: [0] },
+  '3/4':  { beatsPerBar: 3,  groups: [3],       beatMult: 1,     accentBeats: [0] },
+  '2/4':  { beatsPerBar: 2,  groups: [2],       beatMult: 1,     accentBeats: [0] },
+  '6/8':  { beatsPerBar: 6,  groups: [3,3],     beatMult: 1/3,   accentBeats: [0,3] },
+  '9/8':  { beatsPerBar: 9,  groups: [3,3,3],   beatMult: 1/3,   accentBeats: [0,3,6] },
+  '12/8': { beatsPerBar: 12, groups: [3,3,3,3], beatMult: 1/3,   accentBeats: [0,3,6,9] },
+  '3/8':  { beatsPerBar: 3,  groups: [3],       beatMult: 1/3,   accentBeats: [0] },
+  '5/4':  { beatsPerBar: 5,  groups: [3,2],     beatMult: 1,     accentBeats: [0,3] },
+  '7/8':  { beatsPerBar: 7,  groups: [2,2,3],   beatMult: 0.5,   accentBeats: [0,2,4] },
+};
+
+function getTempoMarking(bpm) {
+  if (bpm < 56)  return 'Largo';
+  if (bpm < 66)  return 'Adagio';
+  if (bpm < 88)  return 'Andante';
+  if (bpm < 112) return 'Moderato';
+  if (bpm < 168) return 'Allegro';
+  return 'Presto';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  App state
+// ─────────────────────────────────────────────────────────────────────────────
+const S = {
+  tempo:     88,
+  timeSig:   '4/4',
+  subdiv:    'none',
+  sound:     'woodblock',
+  accents:   [],          // 'accent'|'normal'|'soft'|'silent' per beat
+  countIn:   0,
+  avOffset:  0,           // ms: positive = flash later (Bluetooth speakers)
+  flash:     false,
+  pendulum:  false,
+  subdivVol: 0.5,
+
+  // Trainer
+  trActive:    false,
+  trStart:     60,
+  trTarget:    120,
+  trStep:      4,
+  trBars:      8,
+  trStepBack:  false,
+  trCurBars:   0,
+  trBackPhase: false,     // false = forward step, true = back step
+
+  // Gap click
+  gapActive:  false,
+  gapPlay:    4,
+  gapSilent:  4,
+  gapRandom:  false,
+  gapCurBar:  0,
+  gapMuted:   false,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Web Audio
+// ─────────────────────────────────────────────────────────────────────────────
+let actx = null;
+
+function ensureAudio() {
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') actx.resume();
+}
+
+// Woodblock: sine tone + noise burst, frequencies that sit above nylon guitar
+function playWoodblock(t, freq, gain) {
+  const dur = 0.07;
+  const osc = actx.createOscillator();
+  const og  = actx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, t);
+  osc.frequency.exponentialRampToValueAtTime(freq * 0.55, t + dur);
+  og.gain.setValueAtTime(gain * 0.85, t);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(og); og.connect(actx.destination);
+  osc.start(t); osc.stop(t + dur);
+
+  const nLen = Math.ceil(actx.sampleRate * 0.018);
+  const nBuf = actx.createBuffer(1, nLen, actx.sampleRate);
+  const nd   = nBuf.getChannelData(0);
+  for (let i = 0; i < nLen; i++) nd[i] = Math.random() * 2 - 1;
+  const ns = actx.createBufferSource(); ns.buffer = nBuf;
+  const bpf = actx.createBiquadFilter(); bpf.type = 'bandpass'; bpf.frequency.value = freq * 1.6; bpf.Q.value = 3.5;
+  const ng = actx.createGain();
+  ng.gain.setValueAtTime(gain * 0.55, t);
+  ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.018);
+  ns.connect(bpf); bpf.connect(ng); ng.connect(actx.destination);
+  ns.start(t); ns.stop(t + 0.018);
+}
+
+function playBeep(t, freq, gain, dur) {
+  const osc = actx.createOscillator();
+  const g   = actx.createGain();
+  osc.type = 'square'; osc.frequency.value = freq;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(gain * 0.28, t + 0.003);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(g); g.connect(actx.destination);
+  osc.start(t); osc.stop(t + dur);
+}
+
+function playSoftClick(t, freq, gain) {
+  // Two quick sine pulses for a softer attack
+  for (let k = 0; k < 2; k++) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'sine'; o.frequency.value = freq * (1 - k * 0.15);
+    g.gain.setValueAtTime(gain * (0.5 - k * 0.2), t + k * 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t + k * 0.003); o.stop(t + 0.05);
+  }
+}
+
+function playRimshot(t, gain, heavy) {
+  const dur = heavy ? 0.11 : 0.065;
+  const nLen = Math.ceil(actx.sampleRate * dur);
+  const buf  = actx.createBuffer(1, nLen, actx.sampleRate);
+  const d    = buf.getChannelData(0);
+  for (let i = 0; i < nLen; i++) d[i] = Math.random() * 2 - 1;
+  const ns  = actx.createBufferSource(); ns.buffer = buf;
+  const hpf = actx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = 2000;
+  const g   = actx.createGain();
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  ns.connect(hpf); hpf.connect(g); g.connect(actx.destination);
+  ns.start(t); ns.stop(t + dur);
+}
+
+function playTick(t, role, extraGain) {
+  // role: 'accent' | 'normal' | 'soft' | 'subdiv'
+  const G = (extraGain !== undefined ? extraGain : 1);
+  const freqMap  = { accent: 1350, normal: 1000, soft: 780, subdiv: 640 };
+  const gainMap  = { accent: 0.90, normal: 0.70, soft: 0.38, subdiv: 0.26 * S.subdivVol };
+  const freq = freqMap[role] || 900;
+  const gain = (gainMap[role] || 0.5) * G;
+  if (gain < 0.001) return;
+
+  switch (S.sound) {
+    case 'woodblock': playWoodblock(t, freq, gain); break;
+    case 'click':     playSoftClick(t, freq, gain); break;
+    case 'beep':      playBeep(t, freq, gain, 0.08); break;
+    case 'rimshot':   playRimshot(t, gain, role === 'accent'); break;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Lookahead scheduler
+// ─────────────────────────────────────────────────────────────────────────────
+const LOOKAHEAD = 0.12;      // seconds ahead to schedule
+const SCHED_MS  = 25;        // poll interval
+
+let playing       = false;
+let nextBeatTime  = 0;
+let curBeat       = 0;       // beat index within bar
+let curBar        = 0;       // bar counter (real bars, after count-in)
+let countInLeft   = 0;       // bars of count-in remaining
+let schedTimer    = null;
+
+function beatInterval() {
+  return (60.0 / S.tempo) * TIME_SIGS[S.timeSig].beatMult;
+}
+
+function subdivOffsets(T) {
+  // Returns [[offset_sec, 'subdiv'], ...] within one beat interval T
+  switch (S.subdiv) {
+    case '8th':    return [[T/2, 'subdiv']];
+    case 'triplet':return [[T/3,'subdiv'],[2*T/3,'subdiv']];
+    case '16th':   return [[T/4,'subdiv'],[T/2,'subdiv'],[3*T/4,'subdiv']];
+    case '5th':    return [1,2,3,4].map(i => [i*T/5,'subdiv']);
+    case '6th':    return [1,2,3,4,5].map(i => [i*T/6,'subdiv']);
+    default:       return [];
+  }
+}
+
+function schedBeat(beatTime, beatIdx, isCountIn) {
+  let role;
+  if (isCountIn) {
+    role = beatIdx === 0 ? 'accent' : 'soft';
+  } else {
+    const a = S.accents[beatIdx] || 'normal';
+    if (a === 'silent') return;
+    if (S.gapActive && S.gapMuted) return;
+    role = a;
+  }
+  playTick(beatTime, role);
+
+  if (!isCountIn && S.subdiv !== 'none') {
+    const T   = beatInterval();
+    const sub = S.subdiv === 'none' ? [] : subdivOffsets(T);
+    for (const [off] of sub) {
+      if (!(S.gapActive && S.gapMuted)) playTick(beatTime + off, 'subdiv');
+    }
+  }
+}
+
+function schedVisual(beatTime, beatIdx, isCountIn) {
+  const delay = Math.max(0, (beatTime - actx.currentTime) * 1000 + S.avOffset);
+  setTimeout(() => {
+    if (!playing) return;
+    lightDot(beatIdx);
+    if (!isCountIn && beatIdx === 0 && S.flash) doFlash();
+    if (S.pendulum) drawPendulum(beatIdx);
+    if (isCountIn) {
+      const sig = TIME_SIGS[S.timeSig];
+      const barLabel = countInLeft + (beatIdx === 0 ? 1 : 0);
+      document.getElementById('countInMsg').textContent =
+        beatIdx === 0 ? `Count-in — ${countInLeft} bar${countInLeft > 1 ? 's' : ''} remaining` : '';
+    } else {
+      if (beatIdx === 0) document.getElementById('countInMsg').textContent = '';
+    }
+  }, delay);
+}
+
+function tick() {
+  if (!playing) return;
+  const sig   = TIME_SIGS[S.timeSig];
+  const nBeats = sig.beatsPerBar;
+  const T      = beatInterval();
+
+  while (nextBeatTime < actx.currentTime + LOOKAHEAD) {
+    const isCI = countInLeft > 0;
+    schedBeat(nextBeatTime, curBeat, isCI);
+    schedVisual(nextBeatTime, curBeat, isCI);
+
+    curBeat++;
+    if (curBeat >= nBeats) {
+      curBeat = 0;
+      if (isCI) {
+        countInLeft--;
+      } else {
+        onBarBoundary();
+        curBar++;
+      }
+    }
+    nextBeatTime += T;
+  }
+}
+
+function onBarBoundary() {
+  // Speed trainer
+  if (S.trActive) {
+    S.trCurBars++;
+    if (S.trCurBars >= S.trBars) {
+      S.trCurBars = 0;
+      let delta;
+      if (S.trStepBack) {
+        if (!S.trBackPhase) { delta = S.trStep;                      S.trBackPhase = true; }
+        else                 { delta = -Math.max(1, Math.floor(S.trStep / 2)); S.trBackPhase = false; }
+      } else {
+        delta = S.trStep;
+      }
+      let t = S.tempo + delta;
+      if (delta > 0 && t >= S.trTarget) {
+        t = S.trTarget;
+        S.trActive = false;
+        setTempo(t);
+        updateTrainerStatus('Target reached: ' + S.trTarget + ' BPM');
+        return;
+      }
+      t = Math.max(20, Math.min(300, t));
+      setTempo(t);
+      updateTrainerStatus(`Active | bar ${curBar} | ${S.tempo} BPM`);
+    }
+  }
+
+  // Gap click
+  if (S.gapActive) {
+    S.gapCurBar++;
+    if (!S.gapMuted) {
+      const threshold = S.gapRandom ? null : S.gapPlay;
+      if (S.gapRandom ? Math.random() < 0.28 : S.gapCurBar >= threshold) {
+        S.gapMuted  = true;
+        S.gapCurBar = 0;
+      }
+    } else {
+      const threshold = S.gapRandom ? null : S.gapSilent;
+      if (S.gapRandom ? Math.random() < 0.45 : S.gapCurBar >= threshold) {
+        S.gapMuted  = false;
+        S.gapCurBar = 0;
+      }
+    }
+    refreshGapStatus();
+  }
+}
+
+function startPlaying() {
+  ensureAudio();
+  playing     = true;
+  curBeat     = 0;
+  curBar      = 0;
+  countInLeft = S.countIn;
+  nextBeatTime = actx.currentTime + 0.06;
+
+  if (S.trActive) {
+    S.tempo       = S.trStart;
+    S.trCurBars   = 0;
+    S.trBackPhase = false;
+    updateBPMDisplay();
+  }
+  if (S.gapActive) { S.gapCurBar = 0; S.gapMuted = false; }
+
+  schedTimer = setInterval(tick, SCHED_MS);
+  document.getElementById('startBtn').textContent = '■  STOP';
+  document.getElementById('startBtn').classList.add('playing');
+  startTimer();
+}
+
+function stopPlaying() {
+  playing = false;
+  clearInterval(schedTimer);
+  curBeat = 0; curBar = 0;
+  document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('active', 'is-active-accent'));
+  document.getElementById('startBtn').textContent = '▶  START';
+  document.getElementById('startBtn').classList.remove('playing');
+  document.getElementById('countInMsg').textContent = '';
+  stopTimer();
+  if (S.pendulum) drawPendulum(-1);
+}
+
+function togglePlay() {
+  if (playing) stopPlaying(); else startPlaying();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Tempo
+// ─────────────────────────────────────────────────────────────────────────────
+function setTempo(v) {
+  S.tempo = Math.max(20, Math.min(300, v));
+  updateBPMDisplay();
+}
+
+function changeTempo(d) { setTempo(S.tempo + d); }
+
+function updateBPMDisplay() {
+  document.getElementById('bpmDisplay').textContent   = S.tempo;
+  document.getElementById('tempoMarking').textContent = getTempoMarking(S.tempo);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Tap tempo
+// ─────────────────────────────────────────────────────────────────────────────
+const taps = [];
+function tap() {
+  const now = performance.now();
+  if (taps.length && now - taps[taps.length - 1] > 3000) taps.length = 0;
+  taps.push(now);
+  if (taps.length > 6) taps.shift();
+  if (taps.length >= 2) {
+    let sum = 0;
+    for (let i = 1; i < taps.length; i++) sum += taps[i] - taps[i-1];
+    setTempo(Math.round(60000 / (sum / (taps.length - 1))));
+  }
+  const btn = document.getElementById('tapBtn');
+  btn.style.background = 'var(--accent)'; btn.style.color = '#111';
+  setTimeout(() => { btn.style.background = ''; btn.style.color = ''; }, 90);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Meter / accents
+// ─────────────────────────────────────────────────────────────────────────────
+function applyMeter(sig) {
+  const def = TIME_SIGS[sig];
+  S.timeSig = sig;
+  S.accents = Array.from({ length: def.beatsPerBar }, (_, i) =>
+    def.accentBeats.includes(i) ? 'accent' : 'normal'
+  );
+  renderBeatDots();
+  renderAccentButtons();
+}
+
+function renderBeatDots() {
+  const def  = TIME_SIGS[S.timeSig];
+  const wrap = document.getElementById('beatDisplay');
+  wrap.innerHTML = '';
+  let idx = 0;
+  for (const gSize of def.groups) {
+    const grp = document.createElement('div');
+    grp.className = 'beat-group';
+    for (let i = 0; i < gSize; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'beat-dot';
+      dot.dataset.beat = idx;
+      dot.title = `Beat ${idx + 1} — click to cycle accent`;
+      dot.addEventListener('click', () => cycleBeat(idx));
+      applyDotStyle(dot, S.accents[idx]);
+      grp.appendChild(dot);
+      idx++;
+    }
+    wrap.appendChild(grp);
+  }
+}
+
+function applyDotStyle(dot, accentState) {
+  dot.classList.remove('is-accent', 'is-soft', 'is-silent');
+  if (accentState === 'accent') dot.classList.add('is-accent');
+  else if (accentState === 'soft')   dot.classList.add('is-soft');
+  else if (accentState === 'silent') dot.classList.add('is-silent');
+}
+
+function lightDot(beatIdx) {
+  document.querySelectorAll('.beat-dot').forEach((d, i) => {
+    d.classList.remove('active');
+    if (i === beatIdx) d.classList.add('active');
+  });
+}
+
+function cycleBeat(beatIdx) {
+  const order = ['accent', 'normal', 'soft', 'silent'];
+  const cur   = S.accents[beatIdx] || 'normal';
+  S.accents[beatIdx] = order[(order.indexOf(cur) + 1) % order.length];
+  const dot = document.querySelector(`.beat-dot[data-beat="${beatIdx}"]`);
+  if (dot) applyDotStyle(dot, S.accents[beatIdx]);
+  renderAccentButtons();
+}
+
+function renderAccentButtons() {
+  const labels = { accent: 'A', normal: '·', soft: '°', silent: '—' };
+  const wrap   = document.getElementById('accentRow');
+  wrap.innerHTML = '';
+  S.accents.forEach((a, i) => {
+    const btn = document.createElement('button');
+    btn.className = `btn acc-btn is-${a}`;
+    btn.textContent = labels[a];
+    btn.title = `Beat ${i+1}: ${a}`;
+    btn.addEventListener('click', () => cycleBeat(i));
+    wrap.appendChild(btn);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Flash & pendulum
+// ─────────────────────────────────────────────────────────────────────────────
+function doFlash() {
+  const el = document.getElementById('flashOverlay');
+  el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 55);
+}
+
+function drawPendulum(beatIdx) {
+  const canvas = document.getElementById('pendulumCanvas');
+  const ctx    = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Alternate left / right on each beat
+  const angle = beatIdx < 0 ? 0 :
+    (beatIdx % 2 === 0 ? -Math.PI / 5 : Math.PI / 5);
+
+  const cx = W / 2, cy = 12, len = H - 20;
+  const px = cx + Math.sin(angle) * len;
+  const py = cy + Math.cos(angle) * len;
+
+  ctx.strokeStyle = '#444'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke();
+
+  // Pivot
+  ctx.fillStyle = '#555';
+  ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+
+  // Bob
+  const isDown = beatIdx === 0;
+  ctx.fillStyle = isDown ? '#d4911a' : '#aaa';
+  if (isDown) {
+    ctx.shadowColor = 'rgba(212,145,26,.6)'; ctx.shadowBlur = 8;
+  }
+  ctx.beginPath(); ctx.arc(px, py, 11, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Tab switching
+// ─────────────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p =>
+    p.classList.toggle('active', p.id === 'panel-' + name));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Session timer
+// ─────────────────────────────────────────────────────────────────────────────
+let timerRef = null, timerOrigin = 0, timerAccum = 0;
+
+function startTimer() {
+  timerOrigin = Date.now() - timerAccum;
+  timerRef = setInterval(() => {
+    const s = Math.floor((Date.now() - timerOrigin) / 1000);
+    const m = Math.floor(s / 60);
+    document.getElementById('timerDisplay').textContent =
+      `⏱ ${m}:${(s % 60).toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerRef);
+  timerAccum = Date.now() - timerOrigin;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Trainer
+// ─────────────────────────────────────────────────────────────────────────────
+function updateTrainerStatus(msg) {
+  document.getElementById('trainerStatus').textContent = msg;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Gap click
+// ─────────────────────────────────────────────────────────────────────────────
+function refreshGapStatus() {
+  if (!S.gapActive) { document.getElementById('gapStatus').textContent = 'Inactive'; return; }
+  const phase = S.gapMuted ? 'SILENT' : 'PLAYING';
+  const barOf = S.gapMuted ? S.gapSilent : S.gapPlay;
+  document.getElementById('gapStatus').textContent =
+    `Active | ${phase} | bar ${S.gapCurBar} of ${S.gapRandom ? '?' : barOf}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Presets (localStorage)
+// ─────────────────────────────────────────────────────────────────────────────
+function getPresets()      { try { return JSON.parse(localStorage.getItem('cgm_presets') || '[]'); } catch { return []; } }
+function storePresets(arr) { localStorage.setItem('cgm_presets', JSON.stringify(arr)); }
+
+function savePreset() {
+  const name = document.getElementById('presetNameInput').value.trim();
+  if (!name) { alert('Enter a name for this preset.'); return; }
+  const presets = getPresets();
+  const entry = {
+    id:       Date.now(),
+    name,
+    tempo:    S.tempo,
+    timeSig:  S.timeSig,
+    subdiv:   S.subdiv,
+    sound:    S.sound,
+    accents:  [...S.accents],
+    lastUsed: new Date().toLocaleDateString(),
+    notes:    '',
+  };
+  const existing = presets.findIndex(p => p.name === name);
+  if (existing >= 0) presets[existing] = { ...presets[existing], ...entry, id: presets[existing].id };
+  else               presets.push(entry);
+  storePresets(presets);
+  renderPresetList();
+  updateFooterPresets();
+  document.getElementById('presetNameInput').value = '';
+}
+
+function loadPreset(p) {
+  S.tempo   = p.tempo;
+  S.timeSig = p.timeSig;
+  S.subdiv  = p.subdiv  || 'none';
+  S.sound   = p.sound   || 'woodblock';
+  S.accents = p.accents ? [...p.accents] : [];
+
+  document.getElementById('meterSel').value  = S.timeSig;
+  document.getElementById('subdivSel').value = S.subdiv;
+  document.getElementById('soundSel').value  = S.sound;
+
+  const def = TIME_SIGS[S.timeSig];
+  while (S.accents.length < def.beatsPerBar) S.accents.push('normal');
+  S.accents.length = def.beatsPerBar;
+
+  updateBPMDisplay();
+  renderBeatDots();
+  renderAccentButtons();
+
+  const presets = getPresets();
+  const idx = presets.findIndex(q => q.id === p.id);
+  if (idx >= 0) { presets[idx].lastUsed = new Date().toLocaleDateString(); storePresets(presets); }
+}
+
+function deletePreset(id) {
+  storePresets(getPresets().filter(p => p.id !== id));
+  renderPresetList();
+  updateFooterPresets();
+}
+
+function renderPresetList() {
+  const presets = getPresets();
+  const wrap    = document.getElementById('presetList');
+  wrap.innerHTML = '';
+
+  if (!presets.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--text-dim);font-size:14px;padding:8px';
+    empty.textContent = 'No presets saved yet.';
+    wrap.appendChild(empty);
+    return;
+  }
+
+  presets.forEach((p, i) => {
+    const item = document.createElement('div');
+    item.className = 'preset-item';
+
+    const num = document.createElement('span');
+    num.className = 'p-num'; num.textContent = i + 1;
+
+    const info = document.createElement('div'); info.style.flex = '1';
+    const nm   = document.createElement('div'); nm.className = 'p-name'; nm.textContent = p.name;
+    const mt   = document.createElement('div');
+    mt.className = 'p-meta';
+    mt.textContent = `${p.timeSig} · ${p.tempo} BPM · ${getTempoMarking(p.tempo)} · ${p.lastUsed || 'never'}`;
+    info.append(nm, mt);
+
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'btn btn-sm'; loadBtn.textContent = 'Load';
+    loadBtn.addEventListener('click', () => { loadPreset(p); switchTab('metronome'); });
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-danger'; delBtn.textContent = '✕';
+    delBtn.addEventListener('click', () => deletePreset(p.id));
+
+    item.append(num, info, loadBtn, delBtn);
+    wrap.appendChild(item);
+  });
+}
+
+function updateFooterPresets() {
+  const sel = document.getElementById('footerPreset');
+  while (sel.options.length > 1) sel.remove(1);
+  getPresets().forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.id; o.text = `${p.name}  —  ${p.tempo} BPM`;
+    sel.appendChild(o);
+  });
+}
+
+function exportPresets() {
+  const blob = new Blob([JSON.stringify(getPresets(), null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'guitar-metronome-presets.json'; a.click();
+}
+
+function handleImport(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (Array.isArray(data)) { storePresets(data); renderPresetList(); updateFooterPresets(); }
+      else alert('JSON file must contain an array of presets.');
+    } catch { alert('Could not parse JSON.'); }
+  };
+  r.readAsText(file);
+  e.target.value = '';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Keyboard shortcuts
+// ─────────────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+
+  switch (e.key) {
+    case ' ':        e.preventDefault(); togglePlay(); break;
+    case 'ArrowUp':  e.preventDefault(); changeTempo(e.shiftKey ? 5 : 1); break;
+    case 'ArrowDown':e.preventDefault(); changeTempo(e.shiftKey ? -5 : -1); break;
+    case 't': case 'T': tap(); break;
+    default: {
+      const n = parseInt(e.key, 10);
+      if (n >= 1 && n <= 9) {
+        const p = getPresets()[n - 1];
+        if (p) { loadPreset(p); switchTab('metronome'); }
+      }
+    }
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Wire up all controls
+// ─────────────────────────────────────────────────────────────────────────────
+document.getElementById('startBtn') .addEventListener('click', togglePlay);
+document.getElementById('tapBtn')   .addEventListener('click', tap);
+document.getElementById('btnM1')    .addEventListener('click', () => changeTempo(-1));
+document.getElementById('btnM5')    .addEventListener('click', () => changeTempo(-5));
+document.getElementById('btnP1')    .addEventListener('click', () => changeTempo(1));
+document.getElementById('btnP5')    .addEventListener('click', () => changeTempo(5));
+
+document.getElementById('meterSel') .addEventListener('change', e => applyMeter(e.target.value));
+document.getElementById('subdivSel').addEventListener('change', e => { S.subdiv = e.target.value; });
+document.getElementById('soundSel') .addEventListener('change', e => { S.sound  = e.target.value; });
+document.getElementById('countInSel').addEventListener('change', e => { S.countIn = parseInt(e.target.value, 10); });
+
+document.getElementById('chkFlash')   .addEventListener('change', e => { S.flash    = e.target.checked; });
+document.getElementById('chkPendulum').addEventListener('change', e => {
+  S.pendulum = e.target.checked;
+  document.getElementById('pendulumCanvas').classList.toggle('visible', S.pendulum);
+  if (S.pendulum) drawPendulum(-1);
+});
+document.getElementById('avSlider').addEventListener('input', e => {
+  S.avOffset = parseInt(e.target.value, 10);
+  document.getElementById('avVal').textContent = S.avOffset + ' ms';
+});
+document.getElementById('subdivVol').addEventListener('input', e => {
+  S.subdivVol = parseInt(e.target.value, 10) / 100;
+});
+
+document.querySelectorAll('.tab').forEach(t =>
+  t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+// Trainer buttons
+document.getElementById('btnTrainerApply').addEventListener('click', () => {
+  S.trStart    = parseInt(document.getElementById('trStart').value, 10)  || 60;
+  S.trTarget   = parseInt(document.getElementById('trTarget').value, 10) || 120;
+  S.trStep     = parseInt(document.getElementById('trStep').value, 10)   || 4;
+  S.trBars     = parseInt(document.getElementById('trBars').value, 10)   || 8;
+  S.trStepBack = document.getElementById('trStepBack').checked;
+  S.trActive   = true;
+  S.trCurBars  = 0;
+  S.trBackPhase = false;
+  updateTrainerStatus(`Active: ${S.trStart} → ${S.trTarget} BPM, +${S.trStep} every ${S.trBars} bars`);
+  switchTab('metronome');
+});
+document.getElementById('btnTrainerReset').addEventListener('click', () => {
+  S.trActive = false; updateTrainerStatus('Inactive');
+});
+
+// Gap click buttons
+document.getElementById('btnGapApply').addEventListener('click', () => {
+  S.gapPlay   = parseInt(document.getElementById('gapPlay').value, 10)   || 4;
+  S.gapSilent = parseInt(document.getElementById('gapSilent').value, 10) || 4;
+  S.gapRandom = document.getElementById('gapRandom').checked;
+  S.gapActive = true; S.gapCurBar = 0; S.gapMuted = false;
+  refreshGapStatus();
+  switchTab('metronome');
+});
+document.getElementById('btnGapReset').addEventListener('click', () => {
+  S.gapActive = false; S.gapMuted = false; refreshGapStatus();
+});
+
+// Presets
+document.getElementById('btnSavePreset').addEventListener('click', savePreset);
+document.getElementById('btnExport')    .addEventListener('click', exportPresets);
+document.getElementById('btnImport')    .addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile')   .addEventListener('change', handleImport);
+document.getElementById('footerPreset') .addEventListener('change', e => {
+  if (!e.target.value) return;
+  const p = getPresets().find(q => q.id == e.target.value);
+  if (p) { loadPreset(p); e.target.value = ''; }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────────────────────────────────────
+(function init() {
+  applyMeter('4/4');
+  document.getElementById('meterSel').value = '4/4';
+  updateBPMDisplay();
+  renderPresetList();
+  updateFooterPresets();
+  drawPendulum(-1);
+
+  // Register service worker for offline / PWA install support
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      // Silently fails when opened as a local file:// (needs a server)
+    });
+  }
+})();
+</script>
+</body>
+</html>
