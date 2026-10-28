@@ -391,6 +391,12 @@
     .timing-stat-val { font-size: 17px; color: var(--text); display: block; text-align: center; font-variant-numeric: tabular-nums; }
     .timing-controls { display: flex; justify-content: center; gap: 12px; padding: 6px 0 10px; }
 
+    /* ── Inline timing (metronome panel) ───────────────────── */
+    .timing-inline { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
+    .timing-inline-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .timing-inline-score { font-size: 56px; font-weight: bold; text-align: center; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; padding: 6px 0 2px; }
+    .timing-inline-sublabel { font-size: 12px; color: var(--text-dim); text-align: center; margin-bottom: 6px; }
+
     /* ── Drone panel ───────────────────────────────────────── */
     .drone-note-grid { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; padding: 8px 0; max-width: 420px; margin: 0 auto; }
     .drone-note-btn  { width: 50px; height: 44px; font-size: 15px; }
@@ -507,6 +513,25 @@
       Subdiv vol&nbsp;
       <input type="range" id="subdivVol" min="0" max="100" value="50" style="width:70px">
     </label>
+  </div>
+
+  <div class="timing-inline">
+    <div class="timing-inline-head">
+      <span class="ctrl-label">Timing Analysis</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" id="timingInlineBtn">Enable</button>
+        <button class="btn btn-sm" id="timingInlineReset">Reset</button>
+      </div>
+    </div>
+    <div id="timingInlineBody" style="display:none">
+      <div class="timing-inline-score" id="timingInlineScore">—</div>
+      <div class="timing-inline-sublabel">accuracy within ±30 ms</div>
+      <div class="timing-track" id="timingTrackInline">
+        <div class="timing-center-line"></div>
+        <div class="timing-window"></div>
+      </div>
+      <div class="timing-axis"><span>early</span><span>on time</span><span>late</span></div>
+    </div>
   </div>
 </div>
 
@@ -1720,6 +1745,8 @@ async function startTimingMic() {
     timingSrc.connect(timingAnalyser);
     timingMicOn = true;
     document.getElementById('timingMicBtn').textContent = 'Disable Mic';
+    document.getElementById('timingInlineBtn').textContent = 'Disable';
+    document.getElementById('timingInlineBody').style.display = '';
     runTimingLoop();
   } catch (e) {
     alert('Mic denied: ' + e.message);
@@ -1731,15 +1758,17 @@ function stopTimingMic() {
   cancelAnimationFrame(timingAnimId);
   if (timingSrc) { timingSrc.disconnect(); timingSrc = null; }
   document.getElementById('timingMicBtn').textContent = 'Enable Mic';
+  document.getElementById('timingInlineBtn').textContent = 'Enable';
 }
 
 function resetTiming() {
   tHits = 0; tInTime = 0; tErrors = []; tEnergySmooth = 0; tLastOnset = -999;
-  document.getElementById('timingScore').textContent  = '—';
-  document.getElementById('tStatHits').textContent    = '0';
-  document.getElementById('tStatInTime').textContent  = '0';
-  document.getElementById('tStatAvg').textContent     = '—';
-  document.getElementById('tStatBest').textContent    = '—';
+  document.getElementById('timingScore').textContent      = '—';
+  document.getElementById('timingInlineScore').textContent = '—';
+  document.getElementById('tStatHits').textContent        = '0';
+  document.getElementById('tStatInTime').textContent      = '0';
+  document.getElementById('tStatAvg').textContent         = '—';
+  document.getElementById('tStatBest').textContent        = '—';
   document.querySelectorAll('.timing-blip').forEach(b => b.remove());
 }
 
@@ -1784,28 +1813,36 @@ function recordTimingHit(onsetAC) {
   tErrors.push(Math.abs(errMs));
 
   const pct = Math.round((tInTime / tHits) * 100);
-  document.getElementById('timingScore').textContent    = pct + '%';
-  document.getElementById('tStatHits').textContent      = tHits;
-  document.getElementById('tStatInTime').textContent    = tInTime;
-  document.getElementById('tStatAvg').textContent       = Math.round(tErrors.reduce((a,b)=>a+b,0)/tErrors.length) + ' ms';
-  document.getElementById('tStatBest').textContent      = Math.round(Math.min(...tErrors)) + ' ms';
+  const pctStr = pct + '%';
+  document.getElementById('timingScore').textContent        = pctStr;
+  document.getElementById('timingInlineScore').textContent  = pctStr;
+  document.getElementById('tStatHits').textContent          = tHits;
+  document.getElementById('tStatInTime').textContent        = tInTime;
+  document.getElementById('tStatAvg').textContent           = Math.round(tErrors.reduce((a,b)=>a+b,0)/tErrors.length) + ' ms';
+  document.getElementById('tStatBest').textContent          = Math.round(Math.min(...tErrors)) + ' ms';
 
-  // Add blip
-  const track = document.getElementById('timingTrack');
-  const blip  = document.createElement('div');
-  blip.className = 'timing-blip';
-  const leftPct = 50 + (errMs / T_MAX_MS) * 47;
-  blip.style.left       = Math.max(2, Math.min(98, leftPct)) + '%';
-  blip.style.background = Math.abs(errMs) <= T_WINDOW ? '#4caf50' : 'var(--downbeat)';
-  track.appendChild(blip);
-  const blips = track.querySelectorAll('.timing-blip');
-  if (blips.length > 20) blips[0].remove();
+  // Add blip to both tracks
+  const leftPct  = Math.max(2, Math.min(98, 50 + (errMs / T_MAX_MS) * 47));
+  const blipColor = Math.abs(errMs) <= T_WINDOW ? '#4caf50' : 'var(--downbeat)';
+
+  function addBlip(trackId) {
+    const track = document.getElementById(trackId);
+    const blip  = document.createElement('div');
+    blip.className = 'timing-blip';
+    blip.style.left       = leftPct + '%';
+    blip.style.background = blipColor;
+    track.appendChild(blip);
+    const blips = track.querySelectorAll('.timing-blip');
+    if (blips.length > 20) blips[0].remove();
+  }
+  addBlip('timingTrack');
+  addBlip('timingTrackInline');
 }
 
-document.getElementById('timingMicBtn').addEventListener('click', () => {
-  timingMicOn ? stopTimingMic() : startTimingMic();
-});
-document.getElementById('timingResetBtn').addEventListener('click', resetTiming);
+document.getElementById('timingMicBtn').addEventListener('click',    () => { timingMicOn ? stopTimingMic() : startTimingMic(); });
+document.getElementById('timingResetBtn').addEventListener('click',   resetTiming);
+document.getElementById('timingInlineBtn').addEventListener('click',  () => { timingMicOn ? stopTimingMic() : startTimingMic(); });
+document.getElementById('timingInlineReset').addEventListener('click', resetTiming);
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  DRONE
