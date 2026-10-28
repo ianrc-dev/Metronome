@@ -4,8 +4,8 @@
   "description": "A precise metronome for classical guitarists with speed trainer, gap click, and presets.",
   "start_url": "./metronome.html",
   "display": "standalone",
-  "background_color": "#181818",
-  "theme_color": "#181818",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "portrait-primary",
   "icons": [
     {
