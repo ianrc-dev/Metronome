@@ -317,6 +317,83 @@
       /* Trainer / Gap btn row */
       .btn-md { font-size: 16px; padding: 11px 16px; }
     }
+
+    /* ── Tuner panel ───────────────────────────────────────── */
+    .tuner-note   { font-size: 80px; font-weight: bold; text-align: center; line-height: 1; color: var(--accent); margin: 4px 0 0; }
+    .tuner-freq   { font-size: 44px; font-weight: bold; text-align: center; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+    .tuner-cents  { font-size: 17px; text-align: center; color: var(--text-dim); min-height: 22px; margin-bottom: 6px; }
+    .tuner-meter  {
+      position: relative; height: 30px; background: var(--surface2);
+      border-radius: 15px; margin: 0 auto 4px; max-width: 400px;
+      border: 1px solid var(--border); overflow: hidden;
+    }
+    .tuner-needle {
+      position: absolute; top: 5px; bottom: 5px; width: 4px;
+      background: var(--accent); border-radius: 2px;
+      transform: translateX(-50%); left: 50%;
+      transition: left .06s linear, background .15s;
+    }
+    .tuner-center-line {
+      position: absolute; top: 0; bottom: 0; left: 50%;
+      width: 2px; background: #3a3a3a; transform: translateX(-50%);
+    }
+    .tuner-in-tune .tuner-needle { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,.6); }
+    .tuner-labels {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--text-dim); max-width: 400px; margin: 0 auto 10px;
+      padding: 0 4px;
+    }
+    .ref-section { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 12px; }
+
+    /* ── Record panel ──────────────────────────────────────── */
+    .rec-hint  { font-size: 14px; color: var(--text-dim); text-align: center; line-height: 1.55; padding: 6px 0 10px; }
+    .rec-controls { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; padding: 8px 0; }
+    .btn-rec { font-size: 22px; padding: 13px 44px; border-radius: 40px; border-width: 2px; letter-spacing: .04em; }
+    .btn-rec.recording { border-color: #cc3333; color: #cc3333; }
+    .rec-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #cc3333; margin-right: 5px; animation: blink .9s step-start infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .rec-status { text-align: center; font-size: 14px; color: var(--text-dim); min-height: 20px; margin: 4px 0; }
+    .playback-section { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 12px; }
+
+    /* ── Timing panel ──────────────────────────────────────── */
+    .timing-hint  { font-size: 13px; color: var(--text-dim); line-height: 1.55; padding: 4px 0 8px; }
+    .timing-score { font-size: 72px; font-weight: bold; text-align: center; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
+    .timing-score-label { font-size: 13px; color: var(--text-dim); text-align: center; margin-bottom: 10px; }
+    .timing-track {
+      position: relative; height: 56px; background: var(--surface2);
+      border-radius: var(--radius); margin: 6px 0 2px;
+      border: 1px solid var(--border); overflow: hidden;
+    }
+    .timing-center-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: #444; }
+    .timing-window {
+      position: absolute; top: 0; bottom: 0;
+      left: calc(50% - 20%); width: 40%;
+      background: rgba(212,145,26,.07);
+      border-left: 1px dashed rgba(212,145,26,.3);
+      border-right: 1px dashed rgba(212,145,26,.3);
+    }
+    .timing-blip {
+      position: absolute; width: 9px; height: 9px; border-radius: 50%;
+      top: 50%; transform: translate(-50%, -50%);
+    }
+    .timing-axis {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: var(--text-dim); padding: 0 4px; margin-bottom: 8px;
+    }
+    .timing-stats { display: flex; justify-content: center; gap: 26px; flex-wrap: wrap; font-size: 12px; color: var(--text-dim); padding: 4px 0; }
+    .timing-stat-val { font-size: 17px; color: var(--text); display: block; text-align: center; font-variant-numeric: tabular-nums; }
+    .timing-controls { display: flex; justify-content: center; gap: 12px; padding: 6px 0 10px; }
+
+    /* ── Drone panel ───────────────────────────────────────── */
+    .drone-note-grid { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; padding: 8px 0; max-width: 420px; margin: 0 auto; }
+    .drone-note-btn  { width: 50px; height: 44px; font-size: 15px; }
+    .drone-note-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(212,145,26,.1); }
+    .drone-oct-row { display: flex; gap: 8px; justify-content: center; padding: 4px 0; }
+    .drone-oct-btn { width: 44px; height: 36px; font-size: 14px; }
+    .drone-oct-btn.active { border-color: var(--accent); color: var(--accent); }
+    .drone-freq-disp { text-align: center; font-size: 26px; color: var(--text-dim); font-variant-numeric: tabular-nums; min-height: 36px; padding: 4px 0 8px; }
+    .btn-drone { font-size: 22px; padding: 13px 50px; border-radius: 40px; border-width: 2px; letter-spacing: .05em; }
+    .btn-drone.active { border-color: var(--accent); color: var(--accent); }
   </style>
 </head>
 <body>
@@ -328,6 +405,10 @@
   <button class="tab" data-tab="trainer">Trainer</button>
   <button class="tab" data-tab="gap">Gap Click</button>
   <button class="tab" data-tab="presets">Presets</button>
+  <button class="tab" data-tab="tuner">Tuner</button>
+  <button class="tab" data-tab="record">Record</button>
+  <button class="tab" data-tab="timing">Timing</button>
+  <button class="tab" data-tab="drone">Drone</button>
 </nav>
 
 <!-- ═══════════════════════════════ METRONOME ═══════════════════════════════ -->
@@ -478,6 +559,133 @@
     <button class="btn btn-sm" id="btnExport">Export JSON</button>
     <button class="btn btn-sm" id="btnImport">Import JSON</button>
     <input type="file" id="importFile" accept=".json" style="display:none">
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TUNER ═══════════════════════════════════ -->
+<div class="panel" id="panel-tuner">
+  <h3 class="section-head">Chromatic Tuner</h3>
+  <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:4px 0 10px;flex-wrap:wrap">
+    <button class="btn btn-md" id="tunerStartBtn">Enable Microphone</button>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Reference A</span>
+      <select id="a4Sel">
+        <option value="440">440 Hz</option>
+        <option value="442">442 Hz</option>
+        <option value="432">432 Hz</option>
+      </select>
+    </div>
+  </div>
+  <div class="tuner-note" id="tunerNote">—</div>
+  <div class="tuner-freq" id="tunerFreq">— Hz</div>
+  <div class="tuner-cents" id="tunerCents"></div>
+  <div class="tuner-meter" id="tunerMeter">
+    <div class="tuner-center-line"></div>
+    <div class="tuner-needle" id="tunerNeedle"></div>
+  </div>
+  <div class="tuner-labels"><span>−50¢</span><span>in tune</span><span>+50¢</span></div>
+
+  <div class="ref-section">
+    <h4 class="section-head" style="font-size:14px;margin-bottom:10px">Reference Tone</h4>
+    <div class="ctrl-row" style="padding:4px 0">
+      <div class="ctrl-group">
+        <span class="ctrl-label">Note</span>
+        <select id="refNoteEl">
+          <option value="0">C</option><option value="1">C#</option>
+          <option value="2">D</option><option value="3">D#</option>
+          <option value="4">E</option><option value="5">F</option>
+          <option value="6">F#</option><option value="7">G</option>
+          <option value="8">G#</option><option value="9" selected>A</option>
+          <option value="10">A#</option><option value="11">B</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Octave</span>
+        <select id="refOctEl">
+          <option value="2">2</option><option value="3">3</option>
+          <option value="4" selected>4</option><option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Volume</span>
+        <input type="range" id="refVolEl" min="0" max="100" value="60" style="width:80px">
+      </div>
+      <div class="ctrl-group" style="justify-content:flex-end">
+        <button class="btn btn-md" id="refToneBtn">▶ Play</button>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:13px;color:var(--text-dim);padding:2px 0" id="refToneFreqDisp"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ RECORD ══════════════════════════════════ -->
+<div class="panel" id="panel-record">
+  <h3 class="section-head">Record with Click</h3>
+  <p class="rec-hint">Records your playing through the microphone. Start the metronome first, then hit Record. On playback you'll hear your take alongside a fresh click from the same settings.</p>
+  <div class="rec-controls">
+    <button class="btn btn-rec" id="recBtn">⏺ Record</button>
+  </div>
+  <div class="rec-status" id="recStatus">Idle — start the metronome, then press Record</div>
+
+  <div class="playback-section" id="playbackSection" style="display:none">
+    <h4 class="section-head" style="font-size:14px;margin-bottom:8px">Last Recording</h4>
+    <div class="rec-controls">
+      <button class="btn btn-md" id="playRecBtn">▶ Play with Click</button>
+      <button class="btn btn-sm btn-danger" id="discardRecBtn">✕ Discard</button>
+    </div>
+    <div class="rec-status" id="playStatus"></div>
+    <audio id="recAudio" style="display:none" controls></audio>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TIMING ══════════════════════════════════ -->
+<div class="panel" id="panel-timing">
+  <h3 class="section-head">Timing Analysis</h3>
+  <p class="timing-hint">Play along with the metronome. Your note attacks are detected through the mic and compared to the nearest beat. The track shows early (left) vs late (right); the shaded zone is ±30 ms.</p>
+  <div class="timing-controls">
+    <button class="btn btn-md" id="timingMicBtn">Enable Mic</button>
+    <button class="btn btn-sm" id="timingResetBtn">Reset</button>
+  </div>
+  <div class="timing-score" id="timingScore">—</div>
+  <div class="timing-score-label">accuracy within ±30 ms</div>
+  <div class="timing-track" id="timingTrack">
+    <div class="timing-center-line"></div>
+    <div class="timing-window"></div>
+  </div>
+  <div class="timing-axis">
+    <span>−150 ms early</span><span>on time</span><span>+150 ms late</span>
+  </div>
+  <div class="timing-stats">
+    <div><span class="timing-stat-val" id="tStatHits">0</span>hits</div>
+    <div><span class="timing-stat-val" id="tStatInTime">0</span>in time</div>
+    <div><span class="timing-stat-val" id="tStatAvg">—</span>avg error</div>
+    <div><span class="timing-stat-val" id="tStatBest">—</span>best</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ DRONE ═══════════════════════════════════ -->
+<div class="panel" id="panel-drone">
+  <h3 class="section-head">Drone / Reference Pitch</h3>
+  <div class="drone-note-grid" id="droneNoteGrid"></div>
+  <div class="drone-oct-row" id="droneOctRow"></div>
+  <div class="drone-freq-disp" id="droneFreqDisp"></div>
+  <div class="ctrl-row" style="padding:4px 0 8px">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Waveform</span>
+      <select id="droneWave">
+        <option value="sine">Sine (pure)</option>
+        <option value="triangle">Triangle (warm)</option>
+        <option value="sawtooth">Sawtooth (bright)</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Volume</span>
+      <input type="range" id="droneVol" min="0" max="100" value="50" style="width:90px">
+    </div>
+  </div>
+  <div style="display:flex;justify-content:center;padding:6px 0">
+    <button class="btn btn-drone" id="dronePowerBtn">▶ Start Drone</button>
   </div>
 </div>
 
@@ -683,6 +891,9 @@ function schedBeat(beatTime, beatIdx, isCountIn) {
   if (isCountIn) {
     role = beatIdx === 0 ? 'accent' : 'soft';
   } else {
+    // Track every non-count-in beat for timing analysis
+    scheduledBeats.push(beatTime);
+    if (scheduledBeats.length > 48) scheduledBeats.shift();
     const a = S.accents[beatIdx] || 'normal';
     if (a === 'silent') return;
     if (S.gapActive && S.gapMuted) return;
@@ -1247,6 +1458,432 @@ document.getElementById('footerPreset') .addEventListener('change', e => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  Scheduled beat registry (populated by patched schedBeat above)
+// ─────────────────────────────────────────────────────────────────────────────
+const scheduledBeats = [];
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Shared mic helper — one MediaStream reused across features
+// ─────────────────────────────────────────────────────────────────────────────
+let _micStream = null;
+
+async function getMic() {
+  if (_micStream && _micStream.active) return _micStream;
+  _micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  return _micStream;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TUNER
+// ─────────────────────────────────────────────────────────────────────────────
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+function autoCorrelate(buf, sr) {
+  // RMS gate
+  let rms = 0;
+  for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
+  if (Math.sqrt(rms / buf.length) < 0.01) return -1;
+
+  // Only look up to the period corresponding to ~70 Hz
+  const maxLag = Math.ceil(sr / 70);
+  const SIZE   = buf.length;
+  const c      = new Float32Array(maxLag);
+
+  let e0 = 0;
+  for (let i = 0; i < SIZE; i++) e0 += buf[i] * buf[i];
+
+  for (let lag = 0; lag < maxLag; lag++) {
+    let sum = 0;
+    for (let i = 0; i < SIZE - lag; i++) sum += buf[i] * buf[i + lag];
+    c[lag] = sum / e0;
+  }
+
+  // Skip lag-0 peak; find first dip then first significant peak
+  let d = 1;
+  while (d < maxLag - 1 && c[d] > c[d - 1]) d++;
+  while (d < maxLag - 1 && c[d] < c[d - 1]) d++;
+
+  let peakVal = -1, peakPos = d;
+  for (let i = d; i < maxLag - 1; i++) {
+    if (c[i] > peakVal) { peakVal = c[i]; peakPos = i; }
+  }
+
+  if (peakVal < 0.65 || peakPos < 2 || peakPos >= maxLag - 1) return -1;
+
+  // Parabolic interpolation for sub-sample accuracy
+  const y1 = c[peakPos - 1], y2 = c[peakPos], y3 = c[peakPos + 1];
+  const denom = 2 * y2 - y1 - y3;
+  const T0 = denom !== 0 ? peakPos + (y3 - y1) / (2 * denom) : peakPos;
+  return sr / T0;
+}
+
+function a4Hz()   { return parseInt(document.getElementById('a4Sel').value, 10) || 440; }
+function refNoteFreq() {
+  const note = parseInt(document.getElementById('refNoteEl').value, 10);
+  const oct  = parseInt(document.getElementById('refOctEl').value, 10);
+  return a4Hz() * Math.pow(2, ((oct + 1) * 12 + note - 69) / 12);
+}
+function updateRefFreqDisp() {
+  document.getElementById('refToneFreqDisp').textContent = refNoteFreq().toFixed(2) + ' Hz';
+}
+
+let tunerRunning = false, tunerAnimId = null;
+let tunerSrc = null, tunerAnalyser = null;
+let refOsc = null, refGain = null;
+
+async function startTuner() {
+  ensureAudio();
+  try {
+    const stream  = await getMic();
+    tunerSrc      = actx.createMediaStreamSource(stream);
+    tunerAnalyser = actx.createAnalyser();
+    tunerAnalyser.fftSize = 4096;
+    tunerSrc.connect(tunerAnalyser);
+    tunerRunning = true;
+    document.getElementById('tunerStartBtn').textContent = 'Disable';
+    runTuner();
+  } catch (e) {
+    alert('Mic access denied: ' + e.message);
+  }
+}
+
+function stopTuner() {
+  tunerRunning = false;
+  cancelAnimationFrame(tunerAnimId);
+  if (tunerSrc) { tunerSrc.disconnect(); tunerSrc = null; }
+  document.getElementById('tunerStartBtn').textContent = 'Enable Microphone';
+  document.getElementById('tunerNote').textContent  = '—';
+  document.getElementById('tunerFreq').textContent  = '— Hz';
+  document.getElementById('tunerCents').textContent = '';
+  document.getElementById('tunerNeedle').style.left = '50%';
+  document.getElementById('tunerMeter').classList.remove('tuner-in-tune');
+}
+
+function runTuner() {
+  if (!tunerRunning) return;
+  const buf = new Float32Array(tunerAnalyser.fftSize);
+  tunerAnalyser.getFloatTimeDomainData(buf);
+  const freq = autoCorrelate(buf, actx.sampleRate);
+
+  if (freq > 60 && freq < 2100) {
+    const semi    = 12 * Math.log2(freq / a4Hz()) + 69;
+    const noteIdx = Math.round(semi);
+    const cents   = Math.round((semi - noteIdx) * 100);
+    const octave  = Math.floor(noteIdx / 12) - 1;
+    const name    = NOTE_NAMES[((noteIdx % 12) + 12) % 12];
+
+    document.getElementById('tunerNote').textContent  = name + octave;
+    document.getElementById('tunerFreq').textContent  = freq.toFixed(1) + ' Hz';
+    document.getElementById('tunerCents').textContent = (cents >= 0 ? '+' : '') + cents + ' cents';
+
+    const pct = Math.max(3, Math.min(97, 50 + cents));  // ±50¢ → 0–100%
+    document.getElementById('tunerNeedle').style.left = pct + '%';
+    document.getElementById('tunerMeter').classList.toggle('tuner-in-tune', Math.abs(cents) <= 5);
+  }
+  tunerAnimId = requestAnimationFrame(runTuner);
+}
+
+function toggleRefTone() {
+  ensureAudio();
+  if (refOsc) {
+    refGain.gain.setTargetAtTime(0, actx.currentTime, 0.05);
+    refOsc.stop(actx.currentTime + 0.2);
+    refOsc = null;
+    document.getElementById('refToneBtn').textContent = '▶ Play';
+  } else {
+    const vol = parseInt(document.getElementById('refVolEl').value, 10) / 100;
+    refOsc  = actx.createOscillator();
+    refGain = actx.createGain();
+    refOsc.type = 'sine';
+    refOsc.frequency.value = refNoteFreq();
+    refGain.gain.setValueAtTime(0, actx.currentTime);
+    refGain.gain.setTargetAtTime(vol * 0.45, actx.currentTime, 0.04);
+    refOsc.connect(refGain); refGain.connect(actx.destination);
+    refOsc.start();
+    document.getElementById('refToneBtn').textContent = '■ Stop';
+  }
+}
+
+document.getElementById('tunerStartBtn').addEventListener('click', () => {
+  tunerRunning ? stopTuner() : startTuner();
+});
+document.getElementById('refToneBtn').addEventListener('click', toggleRefTone);
+
+['refNoteEl','refOctEl','a4Sel'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    updateRefFreqDisp();
+    if (refOsc) refOsc.frequency.setTargetAtTime(refNoteFreq(), actx.currentTime, 0.02);
+  });
+});
+document.getElementById('refVolEl').addEventListener('input', e => {
+  if (refGain) refGain.gain.setTargetAtTime(
+    parseInt(e.target.value, 10) / 100 * 0.45, actx.currentTime, 0.02);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  RECORD WITH CLICK
+// ─────────────────────────────────────────────────────────────────────────────
+let mediaRec = null, recChunks = [], recBlob = null, recState = 'idle';
+
+function setRecStatus(html) { document.getElementById('recStatus').innerHTML = html; }
+function setPlayStatus(t)   { document.getElementById('playStatus').textContent = t; }
+
+async function toggleRecord() {
+  if (recState === 'recording') {
+    mediaRec.stop();
+    return;
+  }
+  if (!playing) {
+    setRecStatus('⚠ Start the metronome first, then press Record.');
+    return;
+  }
+  ensureAudio();
+  try {
+    const stream = await getMic();
+    mediaRec  = new MediaRecorder(stream);
+    recChunks = [];
+    mediaRec.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+    mediaRec.onstop = () => {
+      recBlob = new Blob(recChunks, { type: mediaRec.mimeType });
+      const url = URL.createObjectURL(recBlob);
+      const audio = document.getElementById('recAudio');
+      audio.src = url;
+      recState = 'has-recording';
+      document.getElementById('recBtn').textContent = '⏺ Record';
+      document.getElementById('recBtn').classList.remove('recording');
+      document.getElementById('playbackSection').style.display = '';
+      setRecStatus('Recording saved — press ▶ Play with Click to review.');
+    };
+    mediaRec.start();
+    recState = 'recording';
+    document.getElementById('recBtn').textContent = '■ Stop';
+    document.getElementById('recBtn').classList.add('recording');
+    setRecStatus('<span class="rec-dot"></span> Recording…');
+  } catch (e) {
+    setRecStatus('Mic denied: ' + e.message);
+  }
+}
+
+function playRecording() {
+  if (!recBlob) return;
+  const audio = document.getElementById('recAudio');
+  audio.currentTime = 0;
+  if (playing) stopPlaying();
+  ensureAudio();
+  // Start both as close together as possible
+  audio.play().then(() => startPlaying()).catch(() => {
+    startPlaying();
+  });
+  setPlayStatus('Playing back…');
+  audio.onended = () => { stopPlaying(); setPlayStatus('Playback finished.'); audio.onended = null; };
+}
+
+function discardRecording() {
+  if (recState === 'recording' && mediaRec) mediaRec.stop();
+  recBlob = null; recChunks = []; recState = 'idle';
+  document.getElementById('playbackSection').style.display = 'none';
+  document.getElementById('recBtn').textContent = '⏺ Record';
+  document.getElementById('recBtn').classList.remove('recording');
+  setRecStatus('Idle — start the metronome, then press Record');
+}
+
+document.getElementById('recBtn').addEventListener('click', toggleRecord);
+document.getElementById('playRecBtn').addEventListener('click', playRecording);
+document.getElementById('discardRecBtn').addEventListener('click', discardRecording);
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TIMING ANALYSIS
+// ─────────────────────────────────────────────────────────────────────────────
+let timingMicOn = false, timingAnimId = null;
+let timingSrc = null, timingAnalyser = null;
+let tHits = 0, tInTime = 0, tErrors = [];   // |error| in ms
+let tEnergySmooth = 0;
+let tLastOnset = -999;
+const T_COOLDOWN = 180;   // ms between accepted onsets
+const T_WINDOW   = 30;    // ms for "in time"
+const T_MAX_MS   = 150;   // display range ±150 ms
+
+async function startTimingMic() {
+  ensureAudio();
+  try {
+    const stream   = await getMic();
+    timingSrc      = actx.createMediaStreamSource(stream);
+    timingAnalyser = actx.createAnalyser();
+    timingAnalyser.fftSize = 1024;
+    timingSrc.connect(timingAnalyser);
+    timingMicOn = true;
+    document.getElementById('timingMicBtn').textContent = 'Disable Mic';
+    runTimingLoop();
+  } catch (e) {
+    alert('Mic denied: ' + e.message);
+  }
+}
+
+function stopTimingMic() {
+  timingMicOn = false;
+  cancelAnimationFrame(timingAnimId);
+  if (timingSrc) { timingSrc.disconnect(); timingSrc = null; }
+  document.getElementById('timingMicBtn').textContent = 'Enable Mic';
+}
+
+function resetTiming() {
+  tHits = 0; tInTime = 0; tErrors = []; tEnergySmooth = 0; tLastOnset = -999;
+  document.getElementById('timingScore').textContent  = '—';
+  document.getElementById('tStatHits').textContent    = '0';
+  document.getElementById('tStatInTime').textContent  = '0';
+  document.getElementById('tStatAvg').textContent     = '—';
+  document.getElementById('tStatBest').textContent    = '—';
+  document.querySelectorAll('.timing-blip').forEach(b => b.remove());
+}
+
+function runTimingLoop() {
+  if (!timingMicOn) return;
+  const buf = new Float32Array(timingAnalyser.fftSize);
+  timingAnalyser.getFloatTimeDomainData(buf);
+
+  // Adaptive energy onset detection
+  let energy = 0;
+  for (let i = 0; i < buf.length; i++) energy += buf[i] * buf[i];
+  energy /= buf.length;
+  tEnergySmooth = 0.92 * tEnergySmooth + 0.08 * energy;
+
+  const nowMs = actx.currentTime * 1000;
+
+  if (playing
+      && energy > tEnergySmooth * 4.5
+      && energy > 0.0003
+      && nowMs - tLastOnset > T_COOLDOWN) {
+    tLastOnset = nowMs;
+    recordTimingHit(actx.currentTime);
+  }
+
+  timingAnimId = requestAnimationFrame(runTimingLoop);
+}
+
+function recordTimingHit(onsetAC) {
+  if (!scheduledBeats.length) return;
+  // Find the nearest scheduled beat (past or near-future within half a beat)
+  const T_beat = beatInterval();
+  let bestErr = Infinity, nearest = null;
+  for (const bt of scheduledBeats) {
+    const err = onsetAC - bt;
+    if (Math.abs(err) < Math.abs(bestErr)) { bestErr = err; nearest = bt; }
+  }
+  if (nearest === null || Math.abs(bestErr) > T_beat * 0.6) return;
+
+  const errMs = bestErr * 1000;
+  tHits++;
+  if (Math.abs(errMs) <= T_WINDOW) tInTime++;
+  tErrors.push(Math.abs(errMs));
+
+  const pct = Math.round((tInTime / tHits) * 100);
+  document.getElementById('timingScore').textContent    = pct + '%';
+  document.getElementById('tStatHits').textContent      = tHits;
+  document.getElementById('tStatInTime').textContent    = tInTime;
+  document.getElementById('tStatAvg').textContent       = Math.round(tErrors.reduce((a,b)=>a+b,0)/tErrors.length) + ' ms';
+  document.getElementById('tStatBest').textContent      = Math.round(Math.min(...tErrors)) + ' ms';
+
+  // Add blip
+  const track = document.getElementById('timingTrack');
+  const blip  = document.createElement('div');
+  blip.className = 'timing-blip';
+  const leftPct = 50 + (errMs / T_MAX_MS) * 47;
+  blip.style.left       = Math.max(2, Math.min(98, leftPct)) + '%';
+  blip.style.background = Math.abs(errMs) <= T_WINDOW ? '#4caf50' : 'var(--downbeat)';
+  track.appendChild(blip);
+  const blips = track.querySelectorAll('.timing-blip');
+  if (blips.length > 20) blips[0].remove();
+}
+
+document.getElementById('timingMicBtn').addEventListener('click', () => {
+  timingMicOn ? stopTimingMic() : startTimingMic();
+});
+document.getElementById('timingResetBtn').addEventListener('click', resetTiming);
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  DRONE
+// ─────────────────────────────────────────────────────────────────────────────
+let droneOsc = null, droneGain = null;
+let droneNote = 9, droneOct = 3;  // default: A3
+
+function droneFreqHz() {
+  return a4Hz() * Math.pow(2, ((droneOct + 1) * 12 + droneNote - 69) / 12);
+}
+
+function updateDroneDisp() {
+  document.getElementById('droneFreqDisp').textContent =
+    NOTE_NAMES[droneNote] + droneOct + '  ·  ' + droneFreqHz().toFixed(2) + ' Hz';
+}
+
+function renderDroneNotes() {
+  const grid = document.getElementById('droneNoteGrid');
+  grid.innerHTML = '';
+  NOTE_NAMES.forEach((n, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn drone-note-btn' + (i === droneNote ? ' active' : '');
+    btn.textContent = n;
+    btn.addEventListener('click', () => {
+      droneNote = i;
+      grid.querySelectorAll('.drone-note-btn').forEach((b, j) => b.classList.toggle('active', j === i));
+      updateDroneDisp();
+      if (droneOsc) droneOsc.frequency.setTargetAtTime(droneFreqHz(), actx.currentTime, 0.02);
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function renderDroneOcts() {
+  const row = document.getElementById('droneOctRow');
+  row.innerHTML = '';
+  [2, 3, 4, 5].forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'btn drone-oct-btn' + (o === droneOct ? ' active' : '');
+    btn.textContent = o;
+    btn.addEventListener('click', () => {
+      droneOct = o;
+      row.querySelectorAll('.drone-oct-btn').forEach(b =>
+        b.classList.toggle('active', +b.textContent === o));
+      updateDroneDisp();
+      if (droneOsc) droneOsc.frequency.setTargetAtTime(droneFreqHz(), actx.currentTime, 0.02);
+    });
+    row.appendChild(btn);
+  });
+}
+
+function toggleDrone() {
+  ensureAudio();
+  if (droneOsc) {
+    droneGain.gain.setTargetAtTime(0, actx.currentTime, 0.08);
+    droneOsc.stop(actx.currentTime + 0.4);
+    droneOsc = null;
+    document.getElementById('dronePowerBtn').textContent = '▶ Start Drone';
+    document.getElementById('dronePowerBtn').classList.remove('active');
+  } else {
+    const vol  = parseInt(document.getElementById('droneVol').value, 10) / 100;
+    const wave = document.getElementById('droneWave').value;
+    droneOsc  = actx.createOscillator();
+    droneGain = actx.createGain();
+    droneOsc.type = wave;
+    droneOsc.frequency.value = droneFreqHz();
+    droneGain.gain.setValueAtTime(0, actx.currentTime);
+    droneGain.gain.setTargetAtTime(vol * 0.4, actx.currentTime, 0.1);
+    droneOsc.connect(droneGain); droneGain.connect(actx.destination);
+    droneOsc.start();
+    document.getElementById('dronePowerBtn').textContent = '■ Stop Drone';
+    document.getElementById('dronePowerBtn').classList.add('active');
+  }
+}
+
+document.getElementById('dronePowerBtn').addEventListener('click', toggleDrone);
+document.getElementById('droneWave').addEventListener('change', e => {
+  if (droneOsc) droneOsc.type = e.target.value;
+});
+document.getElementById('droneVol').addEventListener('input', e => {
+  if (droneGain) droneGain.gain.setTargetAtTime(
+    parseInt(e.target.value, 10) / 100 * 0.4, actx.currentTime, 0.02);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  Init
 // ─────────────────────────────────────────────────────────────────────────────
 (function init() {
@@ -1256,6 +1893,10 @@ document.getElementById('footerPreset') .addEventListener('change', e => {
   renderPresetList();
   updateFooterPresets();
   drawPendulum(-1);
+  renderDroneNotes();
+  renderDroneOcts();
+  updateDroneDisp();
+  updateRefFreqDisp();
 
   // Register service worker for offline / PWA install support
   if ('serviceWorker' in navigator) {
