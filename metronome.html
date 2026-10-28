@@ -394,8 +394,14 @@
     /* ── Inline timing (metronome panel) ───────────────────── */
     .timing-inline { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
     .timing-inline-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .timing-inline-score { font-size: 56px; font-weight: bold; text-align: center; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; padding: 6px 0 2px; }
-    .timing-inline-sublabel { font-size: 12px; color: var(--text-dim); text-align: center; margin-bottom: 6px; }
+    .timing-inline-score { font-size: 36px; font-weight: bold; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .timing-inline-sublabel { font-size: 12px; color: var(--text-dim); }
+    .timing-acc-row { display: flex; justify-content: center; align-items: baseline; gap: 8px; padding: 4px 0 6px; }
+    .timing-last-hit-val { font-size: 58px; font-weight: bold; text-align: center; font-variant-numeric: tabular-nums; line-height: 1; color: var(--text-dim); }
+    .timing-last-hit-val.good  { color: #4caf50; }
+    .timing-last-hit-val.early { color: var(--accent); }
+    .timing-last-hit-val.late  { color: var(--downbeat); }
+    .timing-last-hit-lbl { font-size: 13px; color: var(--text-dim); text-align: center; min-height: 18px; }
     .timing-settings {
       background: var(--surface2); border-radius: var(--radius);
       border: 1px solid var(--border);
@@ -548,13 +554,17 @@
       </div>
     </div>
     <div id="timingInlineBody" style="display:none">
-      <div class="timing-inline-score" id="timingInlineScore">—</div>
-      <div class="timing-inline-sublabel" id="timingInlineSublabel">accuracy within ±30 ms</div>
+      <div class="timing-last-hit-val" id="timingLastHitValInline">—</div>
+      <div class="timing-last-hit-lbl" id="timingLastHitLblInline">enable mic and play</div>
       <div class="timing-track" id="timingTrackInline">
         <div class="timing-center-line"></div>
         <div class="timing-window"></div>
       </div>
-      <div class="timing-axis"><span>early</span><span>on time</span><span>late</span></div>
+      <div class="timing-axis"><span>← early</span><span>on time</span><span>late →</span></div>
+      <div class="timing-acc-row">
+        <span class="timing-inline-score" id="timingInlineScore">—</span>
+        <span class="timing-inline-sublabel" id="timingInlineSublabel">accuracy within ±30 ms</span>
+      </div>
     </div>
   </div>
 </div>
@@ -717,14 +727,18 @@
       </select>
     </div>
   </div>
-  <div class="timing-score" id="timingScore">—</div>
-  <div class="timing-score-label">accuracy within ±30 ms</div>
+  <div class="timing-last-hit-val" id="timingLastHitVal">—</div>
+  <div class="timing-last-hit-lbl" id="timingLastHitLbl">enable mic and play</div>
   <div class="timing-track" id="timingTrack">
     <div class="timing-center-line"></div>
     <div class="timing-window"></div>
   </div>
   <div class="timing-axis">
     <span>−150 ms early</span><span>on time</span><span>+150 ms late</span>
+  </div>
+  <div class="timing-acc-row" style="justify-content:center;padding:4px 0 8px">
+    <span class="timing-score" id="timingScore">—</span>
+    <span class="timing-score-label" id="timingScoreLabel" style="margin-left:8px;font-size:13px;color:var(--text-dim)">accuracy within ±30 ms</span>
   </div>
   <div class="timing-stats">
     <div><span class="timing-stat-val" id="tStatHits">0</span>hits</div>
@@ -1790,7 +1804,11 @@ document.getElementById('discardRecBtn').addEventListener('click', discardRecord
 // ─────────────────────────────────────────────────────────────────────────────
 let timingMicOn = false, timingAnimId = null;
 let timingSrc = null, timingAnalyser = null;
-let tHits = 0, tInTime = 0, tErrors = [];   // |error| in ms
+let tHits = 0, tInTime = 0, tErrors = [];
+const T_CALIB_N   = 8;     // hits needed to auto-calibrate
+let tCalibHits    = [];    // raw errors during calibration phase
+let tCalibOffset  = 0;     // ms — subtracted from all subsequent raw errors
+let tCalibrated   = false;
 let tEnergySmooth = 0;
 let tLastOnset = -999;
 const T_COOLDOWN  = 180;   // ms between accepted onsets
@@ -1824,14 +1842,52 @@ function stopTimingMic() {
   document.getElementById('timingInlineBtn').textContent = 'Enable';
 }
 
+function setTimingLabel(msg) {
+  document.getElementById('timingInlineSublabel').textContent = msg;
+  document.getElementById('timingScoreLabel').textContent     = msg;
+}
+
+function showLastHit(errMs, isCalib) {
+  const sign = errMs < 0 ? '−' : '+';
+  const abs  = Math.round(Math.abs(errMs));
+  const text = sign + abs + ' ms';
+  let   cls, lbl;
+  if (isCalib) {
+    cls = ''; lbl = 'calibrating…';
+  } else if (Math.abs(errMs) <= tWindow) {
+    cls = 'good';  lbl = 'on time';
+  } else if (errMs < 0) {
+    cls = 'early'; lbl = 'early';
+  } else {
+    cls = 'late';  lbl = 'late';
+  }
+  ['timingLastHitVal','timingLastHitValInline'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    el.textContent = text; el.className = 'timing-last-hit-val ' + cls;
+  });
+  ['timingLastHitLbl','timingLastHitLblInline'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = lbl;
+  });
+}
+
 function resetTiming() {
-  tHits = 0; tInTime = 0; tErrors = []; tEnergySmooth = 0; tLastOnset = -999;
-  document.getElementById('timingScore').textContent      = '—';
+  tHits = 0; tInTime = 0; tErrors = [];
+  tCalibHits = []; tCalibOffset = 0; tCalibrated = false;
+  tEnergySmooth = 0; tLastOnset = -999;
+  const winLabel = 'accuracy within ±' + tWindow + ' ms';
+  document.getElementById('timingScore').textContent       = '—';
   document.getElementById('timingInlineScore').textContent = '—';
-  document.getElementById('tStatHits').textContent        = '0';
-  document.getElementById('tStatInTime').textContent      = '0';
-  document.getElementById('tStatAvg').textContent         = '—';
-  document.getElementById('tStatBest').textContent        = '—';
+  document.getElementById('tStatHits').textContent         = '0';
+  document.getElementById('tStatInTime').textContent       = '0';
+  document.getElementById('tStatAvg').textContent          = '—';
+  document.getElementById('tStatBest').textContent         = '—';
+  setTimingLabel(winLabel);
+  ['timingLastHitVal','timingLastHitValInline'].forEach(id => {
+    const el = document.getElementById(id); if (el) { el.textContent = '—'; el.className = 'timing-last-hit-val'; }
+  });
+  ['timingLastHitLbl','timingLastHitLblInline'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = 'enable mic and play';
+  });
   document.querySelectorAll('.timing-blip').forEach(b => b.remove());
 }
 
@@ -1859,47 +1915,70 @@ function runTimingLoop() {
   timingAnimId = requestAnimationFrame(runTimingLoop);
 }
 
+function addBlip(trackId, leftPct, color) {
+  const track = document.getElementById(trackId); if (!track) return;
+  const blip  = document.createElement('div');
+  blip.className        = 'timing-blip';
+  blip.style.left       = leftPct + '%';
+  blip.style.background = color;
+  track.appendChild(blip);
+  const blips = track.querySelectorAll('.timing-blip');
+  if (blips.length > 20) blips[0].remove();
+}
+
 function recordTimingHit(onsetAC) {
   if (!scheduledBeats.length) return;
-  // Find the nearest scheduled beat (past or near-future within half a beat)
+
   const T_beat = beatInterval();
-  let bestErr = Infinity, nearest = null;
+  let bestErr = Infinity;
   for (const bt of scheduledBeats) {
     const err = onsetAC - bt;
-    if (Math.abs(err) < Math.abs(bestErr)) { bestErr = err; nearest = bt; }
+    if (Math.abs(err) < Math.abs(bestErr)) bestErr = err;
   }
-  if (nearest === null || Math.abs(bestErr) > T_beat * 0.6) return;
+  if (Math.abs(bestErr) > T_beat * 0.6) return;
 
-  const errMs = bestErr * 1000;
+  // Raw error: scheduled beat → onset, minus any user-set A/V offset
+  const rawMs = bestErr * 1000 - S.avOffset;
+
+  // ── Calibration phase ────────────────────────────────────────────────────
+  if (!tCalibrated) {
+    tCalibHits.push(rawMs);
+    const n = tCalibHits.length;
+    showLastHit(rawMs, true);
+    setTimingLabel('Calibrating… ' + n + '/' + T_CALIB_N + ' (play on the beat)');
+    document.getElementById('timingScore').textContent       = n + '/' + T_CALIB_N;
+    document.getElementById('timingInlineScore').textContent = n + '/' + T_CALIB_N;
+    if (n >= T_CALIB_N) {
+      const sorted = [...tCalibHits].sort((a, b) => a - b);
+      tCalibOffset = sorted[Math.floor(sorted.length / 2)];
+      tCalibrated  = true;
+      document.getElementById('timingScore').textContent       = '—';
+      document.getElementById('timingInlineScore').textContent = '—';
+      setTimingLabel('Calibrated · accuracy within ±' + tWindow + ' ms');
+    }
+    return; // calibration hits don't count toward accuracy
+  }
+
+  // ── Live measurement ──────────────────────────────────────────────────────
+  const errMs = rawMs - tCalibOffset;
   tHits++;
   if (Math.abs(errMs) <= tWindow) tInTime++;
   tErrors.push(Math.abs(errMs));
 
-  const pct = Math.round((tInTime / tHits) * 100);
-  const pctStr = pct + '%';
-  document.getElementById('timingScore').textContent        = pctStr;
-  document.getElementById('timingInlineScore').textContent  = pctStr;
-  document.getElementById('tStatHits').textContent          = tHits;
-  document.getElementById('tStatInTime').textContent        = tInTime;
-  document.getElementById('tStatAvg').textContent           = Math.round(tErrors.reduce((a,b)=>a+b,0)/tErrors.length) + ' ms';
-  document.getElementById('tStatBest').textContent          = Math.round(Math.min(...tErrors)) + ' ms';
+  showLastHit(errMs, false);
 
-  // Add blip to both tracks
-  const leftPct  = Math.max(2, Math.min(98, 50 + (errMs / T_MAX_MS) * 47));
-  const blipColor = Math.abs(errMs) <= tWindow ? '#4caf50' : 'var(--downbeat)';
+  const pctStr = Math.round((tInTime / tHits) * 100) + '%';
+  document.getElementById('timingScore').textContent       = pctStr;
+  document.getElementById('timingInlineScore').textContent = pctStr;
+  document.getElementById('tStatHits').textContent         = tHits;
+  document.getElementById('tStatInTime').textContent       = tInTime;
+  document.getElementById('tStatAvg').textContent          = Math.round(tErrors.reduce((a,b)=>a+b,0)/tErrors.length) + ' ms';
+  document.getElementById('tStatBest').textContent         = Math.round(Math.min(...tErrors)) + ' ms';
 
-  function addBlip(trackId) {
-    const track = document.getElementById(trackId);
-    const blip  = document.createElement('div');
-    blip.className = 'timing-blip';
-    blip.style.left       = leftPct + '%';
-    blip.style.background = blipColor;
-    track.appendChild(blip);
-    const blips = track.querySelectorAll('.timing-blip');
-    if (blips.length > 20) blips[0].remove();
-  }
-  addBlip('timingTrack');
-  addBlip('timingTrackInline');
+  const leftPct   = Math.max(2, Math.min(98, 50 + (errMs / T_MAX_MS) * 47));
+  const blipColor = Math.abs(errMs) <= tWindow ? '#4caf50' : (errMs < 0 ? 'var(--accent)' : 'var(--downbeat)');
+  addBlip('timingTrack',       leftPct, blipColor);
+  addBlip('timingTrackInline', leftPct, blipColor);
 }
 
 document.getElementById('timingMicBtn').addEventListener('click',    () => { timingMicOn ? stopTimingMic() : startTimingMic(); });
@@ -1909,11 +1988,10 @@ document.getElementById('timingInlineReset').addEventListener('click', resetTimi
 
 // Helper: sync both controls and update sublabel
 function applyTimingSettings(win, ratio) {
-  tWindow     = Math.max(5, Math.min(200, win));
-  onsetRatio  = ratio;
-  const label = `accuracy within ±${tWindow} ms`;
-  document.getElementById('timingInlineSublabel').textContent = label;
-  document.querySelector('#panel-timing .timing-score-label').textContent = label;
+  tWindow    = Math.max(5, Math.min(200, win));
+  onsetRatio = ratio;
+  if (tCalibrated) setTimingLabel('Calibrated · accuracy within ±' + tWindow + ' ms');
+  else             setTimingLabel('accuracy within ±' + tWindow + ' ms');
 }
 
 // Hit window inputs (keep both in sync)
