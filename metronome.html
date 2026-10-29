@@ -22,7 +22,8 @@
       --downbeat-glow:rgba(217,48,37,.22);
       --text:         #202124;
       --text-dim:     #5f6368;
-      --radius:       8px;
+      --radius:       12px;
+      --nav-height:   60px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,7 +33,7 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'Google Sans', 'Roboto', system-ui, -apple-system, sans-serif;
-      font-size: 18px;
+      font-size: 16px;
       overflow: hidden;
     }
 
@@ -41,39 +42,71 @@
       flex-direction: column;
     }
 
-    /* ── Tabs ──────────────────────────────────────────────── */
+    /* ── Bottom navigation ──────────────────────────────────── */
     .tabs {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
       display: flex;
       background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      padding: 0 12px;
-      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -2px 8px rgba(0,0,0,.08);
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 100;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+      flex-shrink: 0;
     }
     .tabs::-webkit-scrollbar { display: none; }
     .tab {
-      padding: 11px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-width: 68px;
+      flex: 1;
+      height: var(--nav-height);
+      padding: 8px 4px;
       cursor: pointer;
       border: none;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
+      border-top: 3px solid transparent;
       background: none;
       color: var(--text-dim);
-      font-size: 15px;
+      font-size: 11px;
       font-family: inherit;
       transition: color .15s;
       flex-shrink: 0;
       white-space: nowrap;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
+    .tab-icon { font-size: 20px; line-height: 1; }
     .tab:hover  { color: var(--text); }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab.active { color: var(--accent); border-top-color: var(--accent); }
 
     /* ── Panels ────────────────────────────────────────────── */
-    .panel { display: none; flex: 1; overflow-y: auto; padding: 18px 20px; }
+    .panel {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 16px);
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
     .panel.active { display: flex; flex-direction: column; }
+
+    /* ── Card ──────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
 
     /* ── Beat dots ─────────────────────────────────────────── */
     #beatDisplay {
@@ -81,14 +114,14 @@
       justify-content: center;
       align-items: center;
       gap: 10px;
-      padding: 20px 0 16px;
-      min-height: 72px;
+      padding: 16px 0 12px;
+      min-height: 68px;
     }
     .beat-group { display: flex; gap: 10px; }
     .beat-group + .beat-group { margin-left: 18px; }
 
     .beat-dot {
-      width: 26px; height: 26px;
+      width: 30px; height: 30px;
       border-radius: 50%;
       background: #e8eaed;
       border: 2px solid #dadce0;
@@ -105,12 +138,24 @@
     /* ── BPM area ──────────────────────────────────────────── */
     .tempo-section { text-align: center; padding: 4px 0 8px; }
     .bpm-row {
-      display: flex; align-items: center; justify-content: center; gap: 14px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 10px;
+      align-items: center;
     }
+    .tempo-btn-col:first-child  { grid-row: 1; grid-column: 1; }
     .bpm-display {
-      font-size: 76px; font-weight: bold; min-width: 170px;
+      grid-row: 1; grid-column: 2;
+      font-size: 76px; font-weight: bold;
+      text-align: center; min-width: unset;
       letter-spacing: -2px; line-height: 1;
       font-variant-numeric: tabular-nums;
+    }
+    .tempo-btn-col:nth-child(3) { grid-row: 1; grid-column: 3; }
+    #tapBtn {
+      grid-row: 2; grid-column: 1 / -1;
+      width: 100%; font-size: 20px; padding: 14px 0;
     }
     .tempo-btn-col { display: flex; flex-direction: column; gap: 6px; }
 
@@ -126,21 +171,22 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
     }
-    .btn:hover  { background: #f1f3f4; }
-    .btn:active { background: #e8eaed; }
+    .btn:hover  { background: #e8eaed; }
+    .btn:active { background: #dadce0; }
 
-    .btn-t    { width: 50px; height: 34px; font-size: 17px; }
+    .btn-t    { width: 56px; height: 48px; font-size: 17px; }
     .btn-tap  { font-size: 20px; padding: 9px 24px; letter-spacing: .05em; }
 
     .tempo-marking {
-      font-size: 19px; color: var(--text-dim);
+      font-size: 17px; color: var(--text-dim);
       font-style: italic; margin-top: 6px; height: 22px;
     }
 
     /* ── Control row ───────────────────────────────────────── */
     .ctrl-row {
-      display: flex; flex-wrap: wrap;
-      justify-content: center; gap: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
       padding: 10px 0;
     }
     .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
@@ -151,7 +197,8 @@
     select {
       background: var(--surface2); color: var(--text);
       border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 7px 10px; font-size: 15px; font-family: inherit; cursor: pointer;
+      padding: 10px 8px; font-size: 16px; font-family: inherit;
+      cursor: pointer; width: 100%;
     }
 
     /* ── Accent buttons ────────────────────────────────────── */
@@ -160,7 +207,7 @@
       justify-content: center; gap: 6px; padding: 6px 0;
     }
     .acc-btn {
-      width: 40px; height: 36px; font-size: 15px;
+      width: 44px; height: 44px; font-size: 15px;
       border-radius: var(--radius);
     }
     .acc-btn.is-accent  { border-color: var(--downbeat); color: var(--downbeat); }
@@ -173,7 +220,8 @@
       gap: 16px; padding: 14px 0 8px;
     }
     .btn-start {
-      font-size: 24px; padding: 14px 56px;
+      font-size: 22px; padding: 18px 0;
+      width: 100%;
       border-radius: 40px; border-width: 2px; letter-spacing: .06em;
     }
     .btn-start.playing { border-color: var(--accent); color: var(--accent); }
@@ -193,7 +241,7 @@
       display: flex; align-items: center; gap: 6px; cursor: pointer;
     }
     input[type="checkbox"] {
-      width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+      width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;
     }
     input[type="range"] { accent-color: var(--accent); }
 
@@ -232,7 +280,7 @@
     }
     .check-row label { display: flex; align-items: center; gap: 7px; cursor: pointer; color: var(--text); }
     .btn-row  { display: flex; gap: 10px; padding: 6px 0; }
-    .btn-md   { padding: 9px 20px; font-size: 15px; }
+    .btn-md   { padding: 12px 20px; font-size: 16px; }
     .status-box {
       background: var(--surface2); border-radius: var(--radius);
       padding: 9px 14px; font-size: 13px; color: var(--text-dim);
@@ -258,71 +306,49 @@
     .btn-danger:hover { background: #fce8e6; }
     .io-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 
-    /* ── Footer ────────────────────────────────────────────── */
-    .footer {
-      background: var(--surface); border-top: 1px solid var(--border);
-      padding: 9px 18px; display: flex; align-items: center; gap: 14px;
-      flex-shrink: 0;
-      padding-bottom: max(9px, env(safe-area-inset-bottom));
-      padding-left: max(18px, env(safe-area-inset-left));
-      padding-right: max(18px, env(safe-area-inset-right));
+    /* ── Timer / preset row (inline in metronome panel) ────── */
+    .timer-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; padding: 6px 0 8px;
     }
-    .footer-label { font-size: 13px; color: var(--text-dim); white-space: nowrap; }
-    #footerPreset { flex: 1; max-width: 340px; font-size: 13px; }
-    .timer { font-size: 19px; color: var(--accent); font-variant-numeric: tabular-nums; margin-left: auto; }
+    .timer-row .ctrl-group { flex: 1; }
+    .timer-row select { font-size: 13px; padding: 6px 8px; }
+    .timer { font-size: 18px; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-    /* ── Mobile (phone) ────────────────────────────────────── */
-    @media (max-width: 520px) {
-      /* Safe area on notched phones */
+    /* ── Footer (hidden — moved inline) ───────────────────── */
+    .footer { display: none; }
+
+    /* ── Desktop ────────────────────────────────────────────── */
+    @media (min-width: 640px) {
       .tabs {
-        padding-left:  max(12px, env(safe-area-inset-left));
-        padding-right: max(12px, env(safe-area-inset-right));
+        position: static;
+        border-top: none;
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 1px 4px rgba(0,0,0,.08);
+        padding: 0 12px;
+        padding-bottom: 0;
+        flex-shrink: 0;
       }
+      .tab {
+        flex-direction: row;
+        gap: 6px;
+        border-top: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        height: auto;
+        min-width: unset;
+        flex: unset;
+        padding: 11px 18px;
+        font-size: 14px;
+      }
+      .tab-icon { font-size: 16px; }
+      .tab.active { border-top-color: transparent; border-bottom-color: var(--accent); }
       .panel {
-        padding-left:  max(14px, env(safe-area-inset-left));
-        padding-right: max(14px, env(safe-area-inset-right));
+        padding-bottom: 20px;
       }
-
-      /* BPM area: put TAP on its own row */
-      .bpm-row {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        grid-template-rows: auto auto;
-        gap: 10px;
-        align-items: center;
-      }
-      .tempo-btn-col:first-child { grid-row: 1; grid-column: 1; }
-      .bpm-display {
-        grid-row: 1; grid-column: 2;
-        font-size: 62px; min-width: unset; text-align: center;
-      }
-      .tempo-btn-col:nth-child(3) { grid-row: 1; grid-column: 3; }
-      #tapBtn {
-        grid-row: 2; grid-column: 1 / -1;
-        width: 100%; font-size: 22px; padding: 12px 0;
-      }
-
-      /* Larger dots for touch */
-      .beat-dot { width: 32px; height: 32px; }
-
-      /* Taller accent buttons */
-      .acc-btn { width: 44px; height: 42px; font-size: 16px; }
-
-      /* Bigger tempo buttons */
-      .btn-t { width: 54px; height: 40px; font-size: 18px; }
-
-      /* Start button full-width feel */
-      .btn-start { font-size: 22px; padding: 16px 40px; }
-
-      /* Selects: prevent iOS text zoom */
-      select { font-size: 16px; }
-
-      /* Forms */
-      .form-grid { grid-template-columns: 1fr; }
-      input[type="number"], input[type="text"] { font-size: 20px; padding: 10px 12px; }
-
-      /* Trainer / Gap btn row */
-      .btn-md { font-size: 16px; padding: 11px 16px; }
+      .bpm-display { font-size: 88px; }
+      .btn-start { max-width: 360px; }
+      .ctrl-row { grid-template-columns: repeat(4, auto); justify-content: center; }
     }
 
     /* ── Tuner panel ───────────────────────────────────────── */
@@ -430,95 +456,109 @@
 <div id="flashOverlay"></div>
 
 <nav class="tabs">
-  <button class="tab active" data-tab="metronome">Metronome</button>
-  <button class="tab" data-tab="trainer">Trainer</button>
-  <button class="tab" data-tab="gap">Gap Click</button>
-  <button class="tab" data-tab="presets">Presets</button>
-  <button class="tab" data-tab="tuner">Tuner</button>
-  <button class="tab" data-tab="record">Record</button>
-  <button class="tab" data-tab="timing">Timing</button>
-  <button class="tab" data-tab="drone">Drone</button>
+  <button class="tab active" data-tab="metronome"><span class="tab-icon">♩</span>Metronome</button>
+  <button class="tab" data-tab="trainer"><span class="tab-icon">↑</span>Trainer</button>
+  <button class="tab" data-tab="gap"><span class="tab-icon">⏸</span>Gap</button>
+  <button class="tab" data-tab="presets"><span class="tab-icon">☰</span>Presets</button>
+  <button class="tab" data-tab="tuner"><span class="tab-icon">♪</span>Tuner</button>
+  <button class="tab" data-tab="record"><span class="tab-icon">⏺</span>Record</button>
+  <button class="tab" data-tab="timing"><span class="tab-icon">±</span>Timing</button>
+  <button class="tab" data-tab="drone"><span class="tab-icon">∿</span>Drone</button>
 </nav>
 
 <!-- ═══════════════════════════════ METRONOME ═══════════════════════════════ -->
 <div class="panel active" id="panel-metronome">
 
-  <div id="beatDisplay"></div>
+  <div class="card" style="padding-bottom:10px">
+    <div id="beatDisplay"></div>
 
-  <div class="tempo-section">
-    <div class="bpm-row">
-      <div class="tempo-btn-col">
-        <button class="btn btn-t" id="btnM5">−5</button>
-        <button class="btn btn-t" id="btnM1">−</button>
+    <div class="tempo-section">
+      <div class="bpm-row">
+        <div class="tempo-btn-col">
+          <button class="btn btn-t" id="btnM5">−5</button>
+          <button class="btn btn-t" id="btnM1">−</button>
+        </div>
+        <div class="bpm-display" id="bpmDisplay">88</div>
+        <div class="tempo-btn-col">
+          <button class="btn btn-t" id="btnP1">+</button>
+          <button class="btn btn-t" id="btnP5">+5</button>
+        </div>
+        <button class="btn btn-tap" id="tapBtn">TAP</button>
       </div>
-      <div class="bpm-display" id="bpmDisplay">88</div>
-      <div class="tempo-btn-col">
-        <button class="btn btn-t" id="btnP1">+</button>
-        <button class="btn btn-t" id="btnP5">+5</button>
+      <div class="tempo-marking" id="tempoMarking">Moderato</div>
+    </div>
+
+    <div id="accentRow"></div>
+
+    <div class="start-row">
+      <button class="btn btn-start" id="startBtn">▶  START</button>
+    </div>
+    <div id="countInMsg"></div>
+
+    <div class="timer-row">
+      <div class="ctrl-group">
+        <span class="ctrl-label">Preset</span>
+        <select id="footerPreset">
+          <option value="">— none —</option>
+        </select>
       </div>
-      <button class="btn btn-tap" id="tapBtn">TAP</button>
-    </div>
-    <div class="tempo-marking" id="tempoMarking">Moderato</div>
-  </div>
-
-  <div class="ctrl-row">
-    <div class="ctrl-group">
-      <span class="ctrl-label">Meter</span>
-      <select id="meterSel">
-        <option value="4/4">4/4</option>
-        <option value="3/4">3/4</option>
-        <option value="2/4">2/4</option>
-        <option value="6/8">6/8</option>
-        <option value="9/8">9/8</option>
-        <option value="12/8">12/8</option>
-        <option value="3/8">3/8</option>
-        <option value="5/4">5/4</option>
-        <option value="7/8">7/8</option>
-      </select>
-    </div>
-    <div class="ctrl-group">
-      <span class="ctrl-label">Subdivide</span>
-      <select id="subdivSel">
-        <option value="none">None</option>
-        <option value="8th">Eighths</option>
-        <option value="triplet">Triplets</option>
-        <option value="16th">Sixteenths</option>
-        <option value="5th">Quintuplets</option>
-        <option value="6th">Sextuplets</option>
-      </select>
-    </div>
-    <div class="ctrl-group">
-      <span class="ctrl-label">Sound</span>
-      <select id="soundSel">
-        <option value="woodblock">Woodblock</option>
-        <option value="click">Soft Click</option>
-        <option value="beep">Beep</option>
-        <option value="rimshot">Rimshot</option>
-      </select>
-    </div>
-    <div class="ctrl-group">
-      <span class="ctrl-label">Count-in</span>
-      <select id="countInSel">
-        <option value="0">None</option>
-        <option value="1">1 bar</option>
-        <option value="2">2 bars</option>
-      </select>
+      <div class="timer" id="timerDisplay">⏱ 0:00</div>
     </div>
   </div>
 
-  <div id="accentRow"></div>
-
-  <div class="start-row">
-    <button class="btn btn-start" id="startBtn">▶  START</button>
+  <div class="card">
+    <div class="ctrl-row" style="padding:0">
+      <div class="ctrl-group">
+        <span class="ctrl-label">Meter</span>
+        <select id="meterSel">
+          <option value="4/4">4/4</option>
+          <option value="3/4">3/4</option>
+          <option value="2/4">2/4</option>
+          <option value="6/8">6/8</option>
+          <option value="9/8">9/8</option>
+          <option value="12/8">12/8</option>
+          <option value="3/8">3/8</option>
+          <option value="5/4">5/4</option>
+          <option value="7/8">7/8</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Subdivide</span>
+        <select id="subdivSel">
+          <option value="none">None</option>
+          <option value="8th">Eighths</option>
+          <option value="triplet">Triplets</option>
+          <option value="16th">Sixteenths</option>
+          <option value="5th">Quintuplets</option>
+          <option value="6th">Sextuplets</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Sound</span>
+        <select id="soundSel">
+          <option value="woodblock">Woodblock</option>
+          <option value="click">Soft Click</option>
+          <option value="beep">Beep</option>
+          <option value="rimshot">Rimshot</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Count-in</span>
+        <select id="countInSel">
+          <option value="0">None</option>
+          <option value="1">1 bar</option>
+          <option value="2">2 bars</option>
+        </select>
+      </div>
+    </div>
   </div>
-  <div id="countInMsg"></div>
 
   <div id="pendulumWrap">
     <canvas id="pendulumCanvas" width="200" height="110"></canvas>
   </div>
 
   <div class="extras-row">
-    <label><input type="checkbox" id="chkFlash"> Full-screen flash</label>
+    <label><input type="checkbox" id="chkFlash"> Flash</label>
     <label><input type="checkbox" id="chkPendulum"> Pendulum</label>
     <label>
       A/V offset&nbsp;
@@ -571,46 +611,50 @@
 
 <!-- ═══════════════════════════════ TRAINER ═════════════════════════════════ -->
 <div class="panel" id="panel-trainer">
-  <h3 class="section-head">Speed Trainer</h3>
-  <div class="form-grid">
-    <div class="field"><label>Start BPM</label>
-      <input type="number" id="trStart" value="60" min="20" max="300"></div>
-    <div class="field"><label>Target BPM</label>
-      <input type="number" id="trTarget" value="120" min="20" max="300"></div>
-    <div class="field"><label>Step size (BPM)</label>
-      <input type="number" id="trStep" value="4" min="1" max="40"></div>
-    <div class="field"><label>Bars per step</label>
-      <input type="number" id="trBars" value="8" min="1" max="128"></div>
+  <div class="card">
+    <h3 class="section-head">Speed Trainer</h3>
+    <div class="form-grid">
+      <div class="field"><label>Start BPM</label>
+        <input type="number" id="trStart" value="60" min="20" max="300"></div>
+      <div class="field"><label>Target BPM</label>
+        <input type="number" id="trTarget" value="120" min="20" max="300"></div>
+      <div class="field"><label>Step size (BPM)</label>
+        <input type="number" id="trStep" value="4" min="1" max="40"></div>
+      <div class="field"><label>Bars per step</label>
+        <input type="number" id="trBars" value="8" min="1" max="128"></div>
+    </div>
+    <div class="check-row">
+      <label><input type="checkbox" id="trStepBack">
+        Step-back mode (+step, then −½step, repeat)</label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-md" id="btnTrainerApply">Apply &amp; use metronome</button>
+      <button class="btn btn-md" id="btnTrainerReset">Reset</button>
+    </div>
+    <div class="status-box" id="trainerStatus">Inactive</div>
   </div>
-  <div class="check-row">
-    <label><input type="checkbox" id="trStepBack">
-      Step-back mode (+step, then −½step, repeat)</label>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-md" id="btnTrainerApply">Apply &amp; use metronome</button>
-    <button class="btn btn-md" id="btnTrainerReset">Reset</button>
-  </div>
-  <div class="status-box" id="trainerStatus">Inactive</div>
 </div>
 
 <!-- ═══════════════════════════════ GAP CLICK ════════════════════════════════ -->
 <div class="panel" id="panel-gap">
-  <h3 class="section-head">Gap Click</h3>
-  <div class="form-grid">
-    <div class="field"><label>Play for (bars)</label>
-      <input type="number" id="gapPlay" value="4" min="1" max="128"></div>
-    <div class="field"><label>Silent for (bars)</label>
-      <input type="number" id="gapSilent" value="4" min="1" max="128"></div>
+  <div class="card">
+    <h3 class="section-head">Gap Click</h3>
+    <div class="form-grid">
+      <div class="field"><label>Play for (bars)</label>
+        <input type="number" id="gapPlay" value="4" min="1" max="128"></div>
+      <div class="field"><label>Silent for (bars)</label>
+        <input type="number" id="gapSilent" value="4" min="1" max="128"></div>
+    </div>
+    <div class="check-row">
+      <label><input type="checkbox" id="gapRandom">
+        Random-mute mode (unpredictable silences)</label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-md" id="btnGapApply">Apply &amp; use metronome</button>
+      <button class="btn btn-md" id="btnGapReset">Reset</button>
+    </div>
+    <div class="status-box" id="gapStatus">Inactive</div>
   </div>
-  <div class="check-row">
-    <label><input type="checkbox" id="gapRandom">
-      Random-mute mode (unpredictable silences)</label>
-  </div>
-  <div class="btn-row">
-    <button class="btn btn-md" id="btnGapApply">Apply &amp; use metronome</button>
-    <button class="btn btn-md" id="btnGapReset">Reset</button>
-  </div>
-  <div class="status-box" id="gapStatus">Inactive</div>
 </div>
 
 <!-- ═══════════════════════════════ PRESETS ══════════════════════════════════ -->
@@ -773,14 +817,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════ FOOTER ══════════════════════════════════ -->
-<div class="footer">
-  <span class="footer-label">Preset:</span>
-  <select id="footerPreset">
-    <option value="">— none —</option>
-  </select>
-  <div class="timer" id="timerDisplay">⏱ 0:00</div>
-</div>
 
 <script>
 'use strict';
