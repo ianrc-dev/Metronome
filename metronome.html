@@ -1056,6 +1056,10 @@ function tick() {
 
   while (nextBeatTime < actx.currentTime + LOOKAHEAD) {
     const isCI = countInLeft > 0;
+    // Latch the audio clock time of the first real beat (after count-in)
+    if (!isCI && curBeat === 0 && timerAudioStart === null) {
+      timerAudioStart = nextBeatTime;
+    }
     schedBeat(nextBeatTime, curBeat, isCI);
     schedVisual(nextBeatTime, curBeat, isCI);
 
@@ -1149,6 +1153,7 @@ function startPlaying() {
   curBeat     = 0;
   curBar      = 0;
   countInLeft = S.countIn;
+  timerAccum  = 0;
   nextBeatTime = actx.currentTime + 0.06;
 
   if (S.trActive) {
@@ -1341,21 +1346,28 @@ function switchTab(name) {
 // ─────────────────────────────────────────────────────────────────────────────
 //  Session timer
 // ─────────────────────────────────────────────────────────────────────────────
-let timerRef = null, timerOrigin = 0, timerAccum = 0;
+let timerRaf = null, timerAudioStart = null, timerAccum = 0;
+
+function updateTimerDisplay() {
+  const elapsed = timerAccum + (timerAudioStart !== null ? actx.currentTime - timerAudioStart : 0);
+  const s = Math.floor(elapsed);
+  const m = Math.floor(s / 60);
+  document.getElementById('timerDisplay').textContent =
+    `⏱ ${m}:${(s % 60).toString().padStart(2,'0')}`;
+  if (playing) timerRaf = requestAnimationFrame(updateTimerDisplay);
+}
 
 function startTimer() {
-  timerOrigin = Date.now() - timerAccum;
-  timerRef = setInterval(() => {
-    const s = Math.floor((Date.now() - timerOrigin) / 1000);
-    const m = Math.floor(s / 60);
-    document.getElementById('timerDisplay').textContent =
-      `⏱ ${m}:${(s % 60).toString().padStart(2,'0')}`;
-  }, 1000);
+  timerAudioStart = null; // set in tick() when beat 1 fires
+  timerRaf = requestAnimationFrame(updateTimerDisplay);
 }
 
 function stopTimer() {
-  clearInterval(timerRef);
-  timerAccum = Date.now() - timerOrigin;
+  cancelAnimationFrame(timerRaf);
+  if (timerAudioStart !== null) {
+    timerAccum += actx.currentTime - timerAudioStart;
+    timerAudioStart = null;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
